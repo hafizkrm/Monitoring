@@ -9,8 +9,8 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 )
 
 // Database wraps sql.DB with additional functionality

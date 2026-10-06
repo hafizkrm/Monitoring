@@ -3,7 +3,7 @@ package websocket
 import (
 	"log"
 
-	"github.com/yourusername/viscod/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 )
 
 // Hub menangani register, unregister client, dan mem-broadcast pesan.

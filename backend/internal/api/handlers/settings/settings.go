@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/repository"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/repository"
 )
 
 type SettingsHandler struct {

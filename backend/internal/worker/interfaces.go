@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/snmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 // SNMP collector abstraction

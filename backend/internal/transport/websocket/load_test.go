@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/yourusername/viscod/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 )
 
 func TestWSLoad200Devices(t *testing.T) {

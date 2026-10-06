@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 // Profiling is meant to be run against a real database in Staging

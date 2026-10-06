@@ -9,18 +9,18 @@ import (
 	"regexp"
 	"time"
 
-	viscod_middleware "github.com/yourusername/viscod/internal/api/middleware"
-	"github.com/yourusername/viscod/internal/database"
+	nms_middleware "github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
 )
 
 func getUserInfoFromContext(r *http.Request) (*int64, string) {
 	var userID *int64
-	if idRaw := r.Context().Value(viscod_middleware.UserContextKey); idRaw != nil {
+	if idRaw := r.Context().Value(nms_middleware.UserContextKey); idRaw != nil {
 		id := int64(idRaw.(int))
 		userID = &id
 	}
 	username := "Admin"
-	if nameRaw := r.Context().Value(viscod_middleware.UserNameContextKey); nameRaw != nil {
+	if nameRaw := r.Context().Value(nms_middleware.UserNameContextKey); nameRaw != nil {
 		username = nameRaw.(string)
 	}
 	return userID, username

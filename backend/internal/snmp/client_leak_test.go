@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 )
 
 // TestGoroutineStability simulates 50 offline/slow devices to ensure no goroutines leak.

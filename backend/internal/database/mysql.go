@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/yourusername/viscod/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
 )
 
 // Connect membuat koneksi pool ke MySQL

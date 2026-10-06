@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/database"
-	"github.com/yourusername/viscod/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 	"gopkg.in/routeros.v2"
 )
 

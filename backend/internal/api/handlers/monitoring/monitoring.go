@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/viscod/internal/cache"
-	"github.com/yourusername/viscod/internal/database"
-	"github.com/yourusername/viscod/internal/tsdb"
+	"github.com/hafizkrm/Monitoring/backend/internal/cache"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 )
 
 var (

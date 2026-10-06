@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
 )
 
 func TestTSDBQueryHandler_Limits(t *testing.T) {

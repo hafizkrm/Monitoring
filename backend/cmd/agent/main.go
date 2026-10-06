@@ -17,25 +17,25 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/database"
-	"github.com/yourusername/viscod/internal/logger"
-	"github.com/yourusername/viscod/internal/snmp"
-	"github.com/yourusername/viscod/internal/worker"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/worker"
 	// New NMS Architecture Packages (Kept Websocket)
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/yourusername/viscod/internal/contracts"
-	nms_websocket "github.com/yourusername/viscod/internal/transport/websocket"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
+	nms_websocket "github.com/hafizkrm/Monitoring/backend/internal/transport/websocket"
 
-	"github.com/yourusername/viscod/internal/api/handlers/devices"
-	"github.com/yourusername/viscod/internal/api/handlers/incidents"
-	"github.com/yourusername/viscod/internal/api/handlers/logs"
-	"github.com/yourusername/viscod/internal/api/handlers/monitoring"
-	"github.com/yourusername/viscod/internal/api/handlers/reports"
-	"github.com/yourusername/viscod/internal/api/handlers/settings"
-	"github.com/yourusername/viscod/internal/api/handlers/users"
-	viscod_middleware "github.com/yourusername/viscod/internal/api/middleware"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/devices"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/incidents"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/logs"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/monitoring"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/reports"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/settings"
+	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/users"
+	nms_middleware "github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
 	"golang.org/x/time/rate"
 )
 
@@ -59,7 +59,7 @@ func main() {
 	log := logger.InitLogger(cfg.Logger)
 	defer log.Sync()
 
-	log.Info("Starting Viscod Network Monitoring Agent", map[string]interface{}{
+	log.Info("Starting NMS Agent", map[string]interface{}{
 		"version": "1.0.0",
 		"config":  *configPath,
 	})
@@ -103,7 +103,7 @@ func main() {
 	manager := worker.NewManager(*cfg, db, log, snmpClient)
 
 	// Initialize Rate Limiter globally
-	limiter := viscod_middleware.NewIPRateLimiter(rate.Limit(100), 200) // 100 req/s, burst 200
+	limiter := nms_middleware.NewIPRateLimiter(rate.Limit(100), 200) // 100 req/s, burst 200
 
 	// Initialize Chi Router
 	r := chi.NewRouter()
@@ -133,8 +133,8 @@ func main() {
 	// P2-48: PPROF & Goroutine Leaks Profiling
 	// Expose profiling data to identify goroutine leaks under load. Protected by Admin role.
 	r.Group(func(r chi.Router) {
-		r.Use(viscod_middleware.AuthMiddleware(cfg))
-		r.Use(viscod_middleware.RequireRole("admin"))
+		r.Use(nms_middleware.AuthMiddleware(cfg))
+		r.Use(nms_middleware.RequireRole("admin"))
 		r.Mount("/debug", middleware.Profiler())
 	})
 
@@ -149,7 +149,7 @@ func main() {
 		wsHub.BroadcastMessage(msg)
 	})
 
-	r.With(viscod_middleware.RateLimitMiddleware(limiter), viscod_middleware.AuthMiddleware(cfg)).Get("/ws", func(w http.ResponseWriter, req *http.Request) {
+	r.With(nms_middleware.RateLimitMiddleware(limiter), nms_middleware.AuthMiddleware(cfg)).Get("/ws", func(w http.ResponseWriter, req *http.Request) {
 		nms_websocket.ServeWS(wsHub, w, req)
 	})
 	log.Info("Sprint 1 Core Platform Initialized", nil)
@@ -160,7 +160,7 @@ func main() {
 
 	// Rate Limited API Group
 	r.Group(func(r chi.Router) {
-		r.Use(viscod_middleware.RateLimitMiddleware(limiter))
+		r.Use(nms_middleware.RateLimitMiddleware(limiter))
 
 		// Public route
 		usersHandler := users.NewUsersHandler(db.DB, cfg.App.GetJWTSecret())
@@ -170,7 +170,7 @@ func main() {
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
-			r.Use(viscod_middleware.AuthMiddleware(cfg))
+			r.Use(nms_middleware.AuthMiddleware(cfg))
 
 			r.Get("/api/metrics", monitoring.MetricsHandler(db))
 			r.Get("/api/agent/health", monitoring.AgentHealthHandler(db))
@@ -179,7 +179,7 @@ func main() {
 
 			r.Get("/api/v2/logs", logs.LogsHandlerV2(db))
 			r.Get("/api/v2/activity-logs", logs.ActivityLogsHandlerV2(db))
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/v2/activity-logs", logs.PostActivityLogHandlerV2(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/v2/activity-logs", logs.PostActivityLogHandlerV2(db))
 
 			r.Get("/api/inventory/stats", devices.InventoryStatsHandler(db))
 			r.Get("/api/inventory", devices.InventoryHandler(db))
@@ -192,31 +192,31 @@ func main() {
 			r.Get("/api/tsdb/query", monitoring.TSDBQueryHandler(cfg.App.GetTSDBUrl(), cfg.PromQL))
 			r.Get("/api/tsdb/status", monitoring.TSDBStatusHandler(cfg.App.GetTSDBUrl()))
 
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/devices", devices.AddDeviceHandler(db))
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/devices/delete", devices.DeleteDeviceHandler(db))
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/devices/update", devices.UpdateDeviceHandler(db))
-			r.With(viscod_middleware.RequireRole("admin")).Get("/api/worker/metrics", worker.WorkerMetricsHandler(manager))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices", devices.AddDeviceHandler(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices/delete", devices.DeleteDeviceHandler(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices/update", devices.UpdateDeviceHandler(db))
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/worker/metrics", worker.WorkerMetricsHandler(manager))
 
-			r.With(viscod_middleware.RequireRole("admin")).Get("/api/tools/ping", devices.PingHandler)
-			r.With(viscod_middleware.RequireRole("admin")).Get("/api/tools/trace", devices.TraceHandler)
-			r.Get("/api/reports", viscod_middleware.GzipMiddleware(reports.ReportsHandler(db)))
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/tools/ping", devices.PingHandler)
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/tools/trace", devices.TraceHandler)
+			r.Get("/api/reports", nms_middleware.GzipMiddleware(reports.ReportsHandler(db)))
 
 			r.Get("/api/incidents", incidents.GetActiveIncidents(db))
 			r.Get("/api/alerts", incidents.GetAlerts(db))
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/alerts/read", incidents.MarkAlertRead(db))
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/alerts/resolve-by-ip", incidents.ResolveAlertsByIP(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/read", incidents.MarkAlertRead(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/resolve-by-ip", incidents.ResolveAlertsByIP(db))
 
 			r.Get("/api/vpn/users", monitoring.VPNUsersHandler(cfg))
 
-			r.With(viscod_middleware.RequireRole("admin")).Get("/api/users", usersHandler.GetAllUsers)
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/users", usersHandler.AddUser)
-			r.With(viscod_middleware.RequireRole("admin")).Put("/api/users", usersHandler.UpdateUser)
-			r.With(viscod_middleware.RequireRole("admin")).Delete("/api/users", usersHandler.DeleteUser)
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/users", usersHandler.GetAllUsers)
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/users", usersHandler.AddUser)
+			r.With(nms_middleware.RequireRole("admin")).Put("/api/users", usersHandler.UpdateUser)
+			r.With(nms_middleware.RequireRole("admin")).Delete("/api/users", usersHandler.DeleteUser)
 
 			settingsHandler := settings.NewSettingsHandler(db.DB)
-			r.With(viscod_middleware.RequireRole("admin")).Get("/api/settings", settingsHandler.GetAllSettings)
-			r.With(viscod_middleware.RequireRole("admin")).Post("/api/settings", settingsHandler.UpsertSetting)
-			r.With(viscod_middleware.RequireRole("admin")).Put("/api/settings", settingsHandler.UpsertSetting)
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/settings", settingsHandler.GetAllSettings)
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/settings", settingsHandler.UpsertSetting)
+			r.With(nms_middleware.RequireRole("admin")).Put("/api/settings", settingsHandler.UpsertSetting)
 		})
 	})
 
@@ -347,3 +347,4 @@ func staticHandler(h http.Handler) http.HandlerFunc {
 		h.ServeHTTP(gzw, r)
 	}
 }
+

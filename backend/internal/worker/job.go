@@ -3,7 +3,7 @@ package worker
 import (
 	"time"
 
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 // Job holds a polling task for a device.

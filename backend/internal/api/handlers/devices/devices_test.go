@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/yourusername/viscod/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
 )
 
 func TestDeleteDeviceHandler(t *testing.T) {

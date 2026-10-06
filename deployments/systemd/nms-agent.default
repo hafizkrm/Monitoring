@@ -1,4 +1,4 @@
-# Environment variables for Viscod systemd service
+# Environment variables for nms-agent systemd service
 # These can override config file values
 
 # Database
@@ -10,7 +10,7 @@
 
 # Logging
 # LOG_LEVEL=INFO
-# LOG_PATH=/var/log/viscod
+# LOG_PATH=/var/log/nms-agent
 
 # SNMP
 # SNMP_TIMEOUT=5s
@@ -20,3 +20,4 @@
 # Polling
 # POLLING_INTERVAL=60s
 # POLLING_MAX_WORKERS=50
+

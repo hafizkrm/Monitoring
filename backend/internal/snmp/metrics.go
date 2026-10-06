@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 // DeviceMetrics represents all metrics collected from a device
@@ -1575,7 +1575,7 @@ func (c *Client) collectWirelessMetrics(ctx context.Context, device models.Devic
 		// ==========================
 		// Ubiquiti Wireless (AirOS M / AirOS AC / AirMax)
 		// OID Reference: UBNT-AirMAX-MIB (1.3.6.1.4.1.41112.1.4)
-		// Always use WalkOID — index .1 is not guaranteed to exist
+		// Always use WalkOID â€” index .1 is not guaranteed to exist
 		// ==========================
 
 		// SSID (ubntWlStatSsid: 1.3.6.1.4.1.41112.1.4.5.1.2)
@@ -1589,7 +1589,7 @@ func (c *Client) collectWirelessMetrics(ctx context.Context, device models.Devic
 		}
 
 		// ---- SIGNAL STRENGTH ----
-		// Try 1: ubntWlStatRssi (Rx Signal from remote): 1.3.6.1.4.1.41112.1.4.5.1.5 — most reliable for M-series
+		// Try 1: ubntWlStatRssi (Rx Signal from remote): 1.3.6.1.4.1.41112.1.4.5.1.5 â€” most reliable for M-series
 		signalOK := false
 		vals, err1 := c.WalkOID(ctx, device.IPAddress, "1.3.6.1.4.1.41112.1.4.5.1.5", device.SNMPCommunity)
 		if err1 == nil && len(vals) > 0 {
@@ -1653,7 +1653,7 @@ func (c *Client) collectWirelessMetrics(ctx context.Context, device models.Devic
 		}
 
 		// ---- TX RATE ----
-		// ubntWlStatTxRate: 1.3.6.1.4.1.41112.1.4.5.1.9 — value is in bps or Kbps on M-series
+		// ubntWlStatTxRate: 1.3.6.1.4.1.41112.1.4.5.1.9 â€” value is in bps or Kbps on M-series
 		txOK := false
 		if vals, err := c.WalkOID(ctx, device.IPAddress, "1.3.6.1.4.1.41112.1.4.5.1.9", device.SNMPCommunity); err == nil && len(vals) > 0 {
 			if v, err := c.parseInt64(vals[0]); err == nil && v > 0 {
@@ -1683,7 +1683,7 @@ func (c *Client) collectWirelessMetrics(ctx context.Context, device models.Devic
 		}
 
 		// ---- RX RATE ----
-		// ubntWlStatRxRate: 1.3.6.1.4.1.41112.1.4.5.1.10 — value is in bps or Kbps on M-series
+		// ubntWlStatRxRate: 1.3.6.1.4.1.41112.1.4.5.1.10 â€” value is in bps or Kbps on M-series
 		rxOK := false
 		if vals, err := c.WalkOID(ctx, device.IPAddress, "1.3.6.1.4.1.41112.1.4.5.1.10", device.SNMPCommunity); err == nil && len(vals) > 0 {
 			if v, err := c.parseInt64(vals[0]); err == nil && v > 0 {

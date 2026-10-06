@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/snmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 func TestProcessor_validateMetrics(t *testing.T) {

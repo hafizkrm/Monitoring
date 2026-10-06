@@ -4,7 +4,8 @@ global:
 
 # A scrape configuration containing exactly one endpoint to scrape:
 scrape_configs:
-  - job_name: "viscod-nms"
+  - job_name: "nms-agent"
     metrics_path: "/metrics"
     static_configs:
       - targets: ["localhost:8080"]
+

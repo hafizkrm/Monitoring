@@ -4,8 +4,8 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./bin/viscod"
-  cmd = "go build -o ./bin/viscod ./cmd/agent"
+  bin = "./bin/nms-agent"
+  cmd = "go build -o ./bin/nms-agent ./cmd/agent"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "deployments"]
   exclude_file = []

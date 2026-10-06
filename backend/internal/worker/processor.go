@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/viscod/internal/cache"
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/snmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/cache"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 type Processor struct {

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/yourusername/viscod/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 )
 
 const (

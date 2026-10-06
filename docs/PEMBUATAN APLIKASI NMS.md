@@ -1,6 +1,6 @@
-# Stack Teknologi Aplikasi Viscod (Network Monitoring Agent)
+# Stack Teknologi Aplikasi NMS (Network Monitoring Agent)
 
-Aplikasi ini adalah sebuah sistem **Network Monitoring** (Viscod) yang terbagi menjadi dua bagian utama: **Backend** dan **Frontend**. Berikut adalah rincian teknologi dan pustaka (library) yang digunakan dalam aplikasi ini:
+Aplikasi ini adalah sebuah sistem **Network Monitoring** (NMS) yang terbagi menjadi dua bagian utama: **Backend** dan **Frontend**. Berikut adalah rincian teknologi dan pustaka (library) yang digunakan dalam aplikasi ini:
 
 ## 1. Backend (Go / Golang)
 Backend aplikasi ini dibangun menggunakan bahasa pemrograman **Go (Golang)** versi 1.26.0. 
@@ -29,4 +29,5 @@ Berikut adalah teknologi dan library utama yang digunakan pada Frontend:
 - **Manajemen Package:** Menggunakan **npm** (terlihat dari adanya `package.json` dan `package-lock.json`).
 
 ## Kesimpulan
-Aplikasi Viscod ini merupakan sistem pemantauan jaringan berkinerja tinggi. Backend Golang bertugas melakukan komunikasi intensif dengan perangkat keras jaringan (via ICMP, SNMP, RouterOS API) dan menyimpannya di database MySQL. Data pemantauan tersebut kemudian disajikan kepada pengguna secara visual dengan Chart.js di antarmuka web yang di-build menggunakan Vite.
+Aplikasi NMS ini merupakan sistem pemantauan jaringan berkinerja tinggi. Backend Golang bertugas melakukan komunikasi intensif dengan perangkat keras jaringan (via ICMP, SNMP, RouterOS API) dan menyimpannya di database MySQL. Data pemantauan tersebut kemudian disajikan kepada pengguna secara visual dengan Chart.js di antarmuka web yang di-build menggunakan Vite.
+

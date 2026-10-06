@@ -1,4 +1,4 @@
-module github.com/yourusername/viscod
+module github.com/hafizkrm/Monitoring/backend
 
 go 1.26.0
 
@@ -13,6 +13,7 @@ require (
 	github.com/gosnmp/gosnmp v1.35.0
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.24.1
+	github.com/prometheus/prometheus v0.315.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/time v0.16.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -30,7 +31,6 @@ require (
 	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/common v0.71.0 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
-	github.com/prometheus/prometheus v0.315.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect

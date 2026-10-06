@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/yourusername/viscod/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
 )
 
 type contextKey string

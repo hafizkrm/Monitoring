@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/gosnmp/gosnmp"
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/utils"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/utils"
 )
 
 func formatDurationHuman(seconds int) string {
@@ -120,7 +120,7 @@ func (db *Database) GetAvailabilityReport(ctx context.Context, start time.Time, 
 	summary := map[string]interface{}{
 		"Total Perangkat":   count,
 		"Rata-rata SLA (%)": fmt.Sprintf("%.2f%%", avgAvailability),
-		"SLA Met (â‰¥99%)":  fmt.Sprintf("%d Perangkat", compliantCount),
+		"SLA Met (Ã¢â€°Â¥99%)":  fmt.Sprintf("%d Perangkat", compliantCount),
 		"SLA Missed (<99%)": fmt.Sprintf("%d Perangkat", violatedCount),
 	}
 

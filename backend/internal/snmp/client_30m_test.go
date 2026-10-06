@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 // TestGoroutineStability30m is the 30-minute SNMP continuous polling stability test.
@@ -66,7 +66,7 @@ func TestGoroutineStability30m(t *testing.T) {
 	var totalRequests int64
 	var totalErrors int64
 
-	// Start continuous polling workers — 50 goroutines each polling every 5s
+	// Start continuous polling workers â€” 50 goroutines each polling every 5s
 	for i := 0; i < deviceCount; i++ {
 		go func(deviceID int) {
 			ticker := time.NewTicker(pollingInterval)

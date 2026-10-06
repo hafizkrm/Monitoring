@@ -1,7 +1,7 @@
 .PHONY: help build run test clean install deploy dev
 
 # Variables
-BINARY_NAME=viscod
+BINARY_NAME=nms-agent
 MAIN_PACKAGE=./cmd/agent
 BINARY_PATH=./bin/$(BINARY_NAME)
 VERSION=$(shell git describe --tags --always 2>/dev/null || echo "1.0.0")
@@ -12,7 +12,7 @@ GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS=-ldflags "-X 'main.AppVersion=$(VERSION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.GitCommit=$(GIT_COMMIT)'"
 
 help:
-	@echo "Viscod - Network Monitoring Agent"
+	@echo "nms-agent - Network Monitoring Agent"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make build       - Build the binary"
@@ -90,42 +90,42 @@ clean:
 	@echo "✓ Cleanup complete"
 
 install: build
-	@echo "Installing Viscod as systemd service..."
-	@sudo groupadd -f viscod
-	@sudo useradd -m -g viscod viscod || true
-	@sudo mkdir -p /opt/viscod/bin
-	@sudo mkdir -p /etc/viscod
-	@sudo mkdir -p /var/log/viscod
-	@sudo cp $(BINARY_PATH) /opt/viscod/bin/
-	@sudo cp config.example.yaml /etc/viscod/config.yaml
-	@sudo cp deployments/systemd/viscod.service /etc/systemd/system/
-	@sudo cp deployments/systemd/viscod.default /etc/default/viscod
-	@sudo chown -R viscod:viscod /opt/viscod
-	@sudo chown -R viscod:viscod /var/log/viscod
+	@echo "Installing nms-agent as systemd service..."
+	@sudo groupadd -f nms-agent
+	@sudo useradd -m -g nms-agent nms-agent || true
+	@sudo mkdir -p /opt/nms-agent/bin
+	@sudo mkdir -p /etc/nms-agent
+	@sudo mkdir -p /var/log/nms-agent
+	@sudo cp $(BINARY_PATH) /opt/nms-agent/bin/
+	@sudo cp config.example.yaml /etc/nms-agent/config.yaml
+	@sudo cp deployments/systemd/nms-agent.service /etc/systemd/system/
+	@sudo cp deployments/systemd/nms-agent.default /etc/default/nms-agent
+	@sudo chown -R nms-agent:nms-agent /opt/nms-agent
+	@sudo chown -R nms-agent:nms-agent /var/log/nms-agent
 	@sudo systemctl daemon-reload
-	@sudo systemctl enable viscod
+	@sudo systemctl enable nms-agent
 	@echo "✓ Installation complete"
-	@echo "  Start service: sudo systemctl start viscod"
-	@echo "  View status:   sudo systemctl status viscod"
-	@echo "  View logs:     sudo journalctl -u viscod -f"
+	@echo "  Start service: sudo systemctl start nms-agent"
+	@echo "  View status:   sudo systemctl status nms-agent"
+	@echo "  View logs:     sudo journalctl -u nms-agent -f"
 
 uninstall:
-	@echo "Uninstalling Viscod..."
-	@sudo systemctl stop viscod || true
-	@sudo systemctl disable viscod || true
-	@sudo rm -f /etc/systemd/system/viscod.service
-	@sudo rm -rf /opt/viscod
+	@echo "Uninstalling nms-agent..."
+	@sudo systemctl stop nms-agent || true
+	@sudo systemctl disable nms-agent || true
+	@sudo rm -f /etc/systemd/system/nms-agent.service
+	@sudo rm -rf /opt/nms-agent
 	@sudo systemctl daemon-reload
 	@echo "✓ Uninstallation complete"
 
 deploy: clean build install
 	@echo "✓ Deployment complete"
-	@sudo systemctl restart viscod
+	@sudo systemctl restart nms-agent
 
 docker-build:
 	@echo "Building Docker image..."
-	@docker build -f deployments/docker/Dockerfile -t viscod:$(VERSION) .
-	@echo "✓ Docker image built: viscod:$(VERSION)"
+	@docker build -f deployments/docker/Dockerfile -t nms-agent:$(VERSION) .
+	@echo "✓ Docker image built: nms-agent:$(VERSION)"
 
 docker-run:
 	@echo "Starting Docker Compose environment..."
@@ -144,3 +144,4 @@ all: clean build test lint
 .PHONY: ci
 ci: mod-tidy vet lint test build
 	@echo "✓ CI pipeline complete"
+

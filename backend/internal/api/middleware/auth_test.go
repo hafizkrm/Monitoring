@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/yourusername/viscod/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
 )
 
 func TestRequireRole(t *testing.T) {

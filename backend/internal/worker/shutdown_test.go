@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/contracts"
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/transport/websocket"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/transport/websocket"
 )
 
 func TestGracefulShutdown(t *testing.T) {

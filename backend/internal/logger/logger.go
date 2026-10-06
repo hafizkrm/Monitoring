@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 

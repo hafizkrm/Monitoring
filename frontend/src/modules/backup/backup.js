@@ -21,7 +21,7 @@ function bindExport() {
             const url = URL.createObjectURL(blob);
             
             const Timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `viscod-backup-${Timestamp}.json`;
+            const filename = `nms-backup-${Timestamp}.json`;
 
             const a = document.createElement('a');
             a.href = url;
@@ -177,3 +177,4 @@ function bindImport() {
         }, 800);
     });
 }
+

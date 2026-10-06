@@ -9,7 +9,7 @@ func TestLoadConfig(t *testing.T) {
 	// Create a temporary config file
 	configContent := `
 app:
-  name: test-viscod
+  name: test-nms
   version: 1.0.0
 database:
   host: localhost
@@ -33,8 +33,8 @@ database:
 		t.Fatalf("LoadConfig failed: %v", err)
 	}
 
-	if cfg.App.Name != "test-viscod" {
-		t.Errorf("expected app name 'test-viscod', got '%s'", cfg.App.Name)
+	if cfg.App.Name != "test-nms" {
+		t.Errorf("expected app name 'test-nms', got '%s'", cfg.App.Name)
 	}
 
 	if cfg.Database.Host != "localhost" {
@@ -100,3 +100,4 @@ func TestConfig_Validate(t *testing.T) {
 		})
 	}
 }
+

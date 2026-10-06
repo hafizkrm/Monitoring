@@ -133,7 +133,7 @@ type PollingConfig struct {
 type LoggerConfig struct {
 	Level      string `yaml:"level"`       // DEBUG, INFO, WARN, ERROR
 	Format     string `yaml:"format"`      // json, text
-	OutputPath string `yaml:"output_path"` // e.g., "./var/log/viscod.log"
+	OutputPath string `yaml:"output_path"` // e.g., "./var/log/nms-agent.log"
 	MaxSize    int    `yaml:"max_size"`    // MB
 	MaxBackups int    `yaml:"max_backups"`
 	MaxAge     int    `yaml:"max_age"` // Days
@@ -257,7 +257,7 @@ func (c *Config) setDefaults() {
 		c.Logger.Format = "json"
 	}
 	if c.Logger.OutputPath == "" {
-		c.Logger.OutputPath = "./var/log/viscod.log"
+		c.Logger.OutputPath = "./var/log/nms-agent.log"
 	}
 	if c.Logger.MaxSize == 0 {
 		c.Logger.MaxSize = 100 // MB
@@ -349,3 +349,4 @@ func (c *Config) GetCleanupInterval() time.Duration {
 	d, _ := time.ParseDuration(c.Polling.CleanupInterval)
 	return d
 }
+

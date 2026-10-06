@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 type UserRepository struct {

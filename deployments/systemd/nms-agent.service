@@ -1,15 +1,15 @@
 [Unit]
-Description=Viscod - Network Monitoring Agent
+Description=nms-agent - Network Monitoring Agent
 After=network.target mysql.service
 Wants=mysql.service
 
 [Service]
 Type=simple
-User=viscod
-Group=viscod
-WorkingDirectory=/opt/viscod
+User=nms-agent
+Group=nms-agent
+WorkingDirectory=/opt/nms-agent
 
-ExecStart=/opt/viscod/bin/agent -config /etc/viscod/config.yaml
+ExecStart=/opt/nms-agent/bin/nms-agent -config /etc/nms-agent/config.yaml
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=10
@@ -17,7 +17,7 @@ RestartSec=10
 # Standard output / error
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=viscod
+SyslogIdentifier=nms-agent
 
 # Security
 NoNewPrivileges=yes
@@ -32,8 +32,9 @@ TimeoutStartSec=30
 TimeoutStopSec=10
 
 # Environment
-Environment="PATH=/opt/viscod/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
-EnvironmentFile=-/etc/default/viscod
+Environment="PATH=/opt/nms-agent/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+EnvironmentFile=-/etc/default/nms-agent
 
 [Install]
 WantedBy=multi-user.target
+

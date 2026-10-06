@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: mysql:8.0
-    container_name: viscod-db
+    container_name: nms-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -17,7 +17,7 @@ services:
     build: 
       context: ../../backend
       dockerfile: ../deployments/docker/Dockerfile
-    container_name: viscod-agent
+    container_name: nms-agent
     restart: always
     depends_on:
       - db
@@ -34,3 +34,4 @@ services:
 
 volumes:
   mysql_data:
+

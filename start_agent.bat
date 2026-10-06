@@ -34,7 +34,7 @@ if not exist "build" mkdir "build"
 
 rem 3. Bersihkan proses agent dan prometheus lama di background (mencegah bentrok port)
 echo [1/5] Menghentikan sisa proses agent dan TSDB di background...
-taskkill /F /IM agent.exe >nul 2>&1
+taskkill /F /IM nms-agent.exe >nul 2>&1
 taskkill /F /IM prometheus.exe >nul 2>&1
 
 rem 4. Kompilasi otomatis untuk memastikan selalu versi terbaru
@@ -43,7 +43,7 @@ where go >nul 2>&1
 if %ERRORLEVEL%==0 (
     echo       Membangun biner Go terbaru...
     pushd "%CD%\backend"
-    go build -o "..\build\agent.exe" ./cmd/agent
+    go build -o "..\build\nms-agent.exe" ./cmd/agent
     if %ERRORLEVEL%==0 (
         popd
         echo       [OK] Biner ter-update dan siap dijalankan.
@@ -53,7 +53,7 @@ if %ERRORLEVEL%==0 (
         echo.
     )
 ) else (
-    echo       Go compiler tidak ditemukan. Menggunakan biner build\agent.exe yang ada.
+    echo       Go compiler tidak ditemukan. Menggunakan biner build\nms-agent.exe yang ada.
 )
 
 rem 5. Kompilasi otomatis untuk frontend
@@ -70,9 +70,9 @@ if %ERRORLEVEL%==0 (
     echo       NPM tidak ditemukan. Menggunakan frontend/dist yang ada.
 )
 
-rem 6. Validasi keberadaan biner agent.exe
-if not exist "build\agent.exe" (
-    echo [ERROR] Biner "build\agent.exe" tidak ditemukan!
+rem 6. Validasi keberadaan biner nms-agent.exe
+if not exist "build\nms-agent.exe" (
+    echo [ERROR] Biner "build\nms-agent.exe" tidak ditemukan!
     echo.
     pause
     exit /b 1
@@ -100,15 +100,16 @@ echo  Prometheus TSDB tersedia di:   http://localhost:9090
 echo ========================================================
 echo.
 
-"%CD%\build\agent.exe" -config "%CD%\config\config.yaml"
+"%CD%\build\nms-agent.exe" -config "%CD%\config\config.yaml"
 
 rem 9. Cleanup Otomatis Saat Agent Berhenti dan Jendela Ditutup
 echo.
 echo ========================================================
 echo [INFO] Menghentikan server dan membersihkan background...
 echo ========================================================
-taskkill /F /IM agent.exe >nul 2>&1
+taskkill /F /IM nms-agent.exe >nul 2>&1
 taskkill /F /IM prometheus.exe >nul 2>&1
 echo [OK] Seluruh proses NMS dan TSDB telah dihentikan secara 100%% bersih.
 echo.
 pause
+

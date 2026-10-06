@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 // jobHeap implements heap.Interface for Job

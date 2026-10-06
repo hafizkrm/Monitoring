@@ -9,11 +9,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yourusername/viscod/internal/cache"
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
-	"github.com/yourusername/viscod/internal/tsdb"
-	"github.com/yourusername/viscod/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/cache"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
+	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 )
 
 type Manager struct {

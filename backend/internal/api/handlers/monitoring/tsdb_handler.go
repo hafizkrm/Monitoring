@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/database"
-	"github.com/yourusername/viscod/internal/tsdb"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 	"golang.org/x/time/rate"
 	"github.com/prometheus/prometheus/promql/parser"
 )

@@ -10,9 +10,9 @@ import (
 
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	viscod_middleware "github.com/yourusername/viscod/internal/api/middleware"
-	"github.com/yourusername/viscod/internal/models"
-	"github.com/yourusername/viscod/internal/repository"
+	nms_middleware "github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -75,7 +75,7 @@ func recordLoginAttempt(ip string, success bool) {
 
 func (h *UsersHandler) insertActivityLog(r *http.Request, user, action, module, description string) {
 	if user == "" {
-		if nameRaw := r.Context().Value(viscod_middleware.UserNameContextKey); nameRaw != nil {
+		if nameRaw := r.Context().Value(nms_middleware.UserNameContextKey); nameRaw != nil {
 			user = nameRaw.(string)
 		} else {
 			user = "System"
@@ -178,7 +178,7 @@ func (h *UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDRaw := r.Context().Value(viscod_middleware.UserContextKey)
+	userIDRaw := r.Context().Value(nms_middleware.UserContextKey)
 	if userIDRaw != nil {
 		currentUserID, ok := userIDRaw.(int)
 		if ok && currentUserID == payload.ID {
@@ -207,7 +207,7 @@ func (h *UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"message": "Format request tidak valid"})
 		return
 	}
-	ip := viscod_middleware.GetRealIP(r)
+	ip := nms_middleware.GetRealIP(r)
 	if !checkLoginRateLimit(ip) {
 		w.WriteHeader(http.StatusTooManyRequests)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Terlalu banyak percobaan login. Silakan coba lagi sebentar lagi."})

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/models"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
 func timePtr(t time.Time) *time.Time {

@@ -11,7 +11,7 @@ import (
 
 func main() {
 	fmt.Println("==================================================")
-	fmt.Println(" VISCOD - BASELINE METRICS COLLECTOR (PHASE 0)  ")
+	fmt.Println(" NMS - BASELINE METRICS COLLECTOR (PHASE 0)  ")
 	fmt.Println("==================================================")
 	fmt.Println("Collecting data from local MySQL (nms_db)...")
 	fmt.Println()
@@ -86,3 +86,4 @@ func main() {
 	fmt.Println("   Untuk metrik CPU dan RAM, Anda bisa memantaunya via Task Manager (Windows) atau 'top' (Linux) saat agent berjalan.")
 	fmt.Println("==================================================")
 }
+

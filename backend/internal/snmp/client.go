@@ -12,8 +12,8 @@ import (
 
 	"github.com/go-ping/ping"
 	"github.com/gosnmp/gosnmp"
-	"github.com/yourusername/viscod/internal/config"
-	"github.com/yourusername/viscod/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 )
 
 type Client struct {
