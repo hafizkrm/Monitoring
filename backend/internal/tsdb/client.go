@@ -144,12 +144,8 @@ func (c *PrometheusClient) FetchDeviceMetricsHistory(ctx context.Context, device
 	}
 
 	queries := []metricQuery{
-		{fmt.Sprintf(`nms_device_cpu_usage_percent{device_id="%s"}`, deviceID), "cpu"},
-		{fmt.Sprintf(`nms_device_memory_usage_percent{device_id="%s"}`, deviceID), "memory"},
-		{fmt.Sprintf(`nms_device_latency_seconds{device_id="%s"}`, deviceID), "latency"},
-		{fmt.Sprintf(`nms_device_packet_loss_percent{device_id="%s"}`, deviceID), "packet_loss"},
-		{fmt.Sprintf(`nms_device_rx_bytes_per_second{device_id="%s"}`, deviceID), "rx_rate"},
-		{fmt.Sprintf(`nms_device_tx_bytes_per_second{device_id="%s"}`, deviceID), "tx_rate"},
+		// Removed: Per-device telemetry gauges have been deprecated due to cardinality limits.
+		// Telemetry is now strictly handled by SQL authoritative DB.
 	}
 
 	// Use a unified time-keyed map
