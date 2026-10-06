@@ -10,8 +10,6 @@ services:
       MYSQL_DATABASE: monitoring
       MYSQL_USER: viscod
       MYSQL_PASSWORD: viscodpassword
-    ports:
-      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 

@@ -60,6 +60,10 @@ func TestDatabaseProfiling(t *testing.T) {
 		t.Logf("T+End: Global Queries = %d. Diff = %d queries. Took %v", finalQueries, diff, duration)
 		t.Logf("Statements/poll: %.2f", float64(diff)/100.0)
 		t.Logf("Latency/poll: %v", duration/100)
+		
+		t.Log("NOTE: These 300+ queries originate from a raw SQL verification harness (db.Exec directly loop 100x), NOT from the production Go application workload.")
+		t.Log("      This is to prove the database is capable of handling the write amplification, but it skips the batching logic in production.")
+
 		if diff > 500 {
 			t.Errorf("Write amplification too high! Diff = %d", diff)
 		}
