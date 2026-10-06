@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -64,14 +65,21 @@ func MetricsHistoryHandler(db *database.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		ip := r.URL.Query().Get("ip")
-		if ip == "" {
+		deviceIDStr := r.URL.Query().Get("device_id")
+		if deviceIDStr == "" {
 			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "ip parameter required"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "device_id parameter required"})
 			return
 		}
 
-		history, err := db.GetMetricsHistoryByIP(r.Context(), ip)
+		devID, err := strconv.Atoi(deviceIDStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid device_id"})
+			return
+		}
+
+		history, err := db.GetMetricsHistoryByDeviceID(r.Context(), devID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode([]map[string]interface{}{})

@@ -12,7 +12,6 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/logger"
-	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 )
 
@@ -285,11 +284,8 @@ func (m *Manager) processJob(
 		*device,
 	)
 
-	// TSDB: Record worker poll duration
-	duration := time.Since(start).Seconds()
-
 	if err != nil {
-		tsdb.WorkerPollDuration.WithLabelValues("error").Observe(duration)
+		// observation point removed
 		m.cb.RecordFailure(device.ID)
 		m.logger.Error("polling failure", map[string]interface{}{"device": device.ID, "error": err})
 
@@ -442,27 +438,8 @@ func (m *Manager) processJob(
 			))
 		}
 
-		// PHASE 3 (TSDB): Export metrics to Prometheus
-		devIDStr := fmt.Sprintf("%d", device.ID)
-		devTypeStr := string(device.DeviceType)
-		tsdb.DeviceCPU.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor)).Set(metrics.CPUUsage)
-		tsdb.DeviceMemory.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor)).Set(metrics.MemoryUsage)
-		tsdb.DevicePingLatency.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor)).Set(float64(metrics.LatencyMs))
-		tsdb.DevicePacketLoss.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor)).Set(metrics.PacketLoss)
-		tsdb.DeviceUptime.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor)).Set(float64(metrics.Uptime))
-		tsdb.DeviceRxRate.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor), devTypeStr).Set(metrics.RxRate)
-		tsdb.DeviceTxRate.WithLabelValues(devIDStr, device.IPAddress, device.Hostname, string(device.Vendor), devTypeStr).Set(metrics.TxRate)
-		tsdb.WorkerPollDuration.WithLabelValues("success").Observe(duration)
-		
-		for _, iface := range metrics.Interfaces {
-			ifaceStatus := 0.0
-			if iface.Status == "up" {
-				ifaceStatus = 1.0
-			}
-			tsdb.InterfaceStatus.WithLabelValues(devIDStr, device.IPAddress, iface.InterfaceName).Set(ifaceStatus)
-			tsdb.InterfaceInBps.WithLabelValues(devIDStr, device.IPAddress, iface.InterfaceName).Set(iface.RxMbps)
-			tsdb.InterfaceOutBps.WithLabelValues(devIDStr, device.IPAddress, iface.InterfaceName).Set(iface.TxMbps)
-		}
+		// PHASE 3 (M8): Event-driven TSDB export happens via EventBus (TSDBExporter)
+		// Legacy TSDB direct instrumentation removed in M9.
 	}
 
 	if err != nil {
@@ -473,7 +450,7 @@ func (m *Manager) processJob(
 		})
 
 		// PHASE 3: Track failed polls in TSDB too
-		tsdb.WorkerPollDuration.WithLabelValues("failure").Observe(duration)
+		// observation point removed
 
 		return
 	}

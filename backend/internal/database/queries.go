@@ -634,13 +634,8 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 	return items, nil
 }
 
-// GetMetricsHistoryByIP returns metric history for a specific device IP
-func (db *Database) GetMetricsHistoryByIP(ctx context.Context, ip string) ([]map[string]interface{}, error) {
-	var devID int64
-	if err := db.QueryRowContext(ctx, "SELECT id FROM devices WHERE ip_address = ? LIMIT 1", ip).Scan(&devID); err != nil {
-		return nil, fmt.Errorf("device not found for ip: %s", ip)
-	}
-
+// GetMetricsHistoryByDeviceID returns metric history for a specific device ID
+func (db *Database) GetMetricsHistoryByDeviceID(ctx context.Context, devID int) ([]map[string]interface{}, error) {
 	query := `
 		SELECT COALESCE(m.cpu_usage, 0), COALESCE(m.memory_usage, 0), COALESCE(m.latency, 0), COALESCE(m.packet_loss, 0), COALESCE(m.tx_rate, 0), COALESCE(m.rx_rate, 0), COALESCE(m.jitter, 0), m.collected_at
 		FROM device_metrics m

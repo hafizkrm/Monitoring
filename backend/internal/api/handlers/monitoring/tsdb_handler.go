@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
@@ -15,16 +16,23 @@ import (
 )
 
 // TSDBDeviceHistoryHandler returns per-device metrics history from Prometheus.
-// Query params: ip (required), duration (optional, default "30m", e.g. "1h", "6h", "24h")
+// Query params: device_id (required), duration (optional, default "30m", e.g. "1h", "6h", "24h")
 func TSDBDeviceHistoryHandler(db *database.Database, tsdbURL string) http.HandlerFunc {
 	tsdbClient := tsdb.NewPrometheusClient(tsdbURL)
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		ip := r.URL.Query().Get("ip")
-		if ip == "" {
+		deviceIDStr := r.URL.Query().Get("device_id")
+		if deviceIDStr == "" {
 			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "ip parameter required"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "device_id parameter required"})
+			return
+		}
+		
+		devID, err := strconv.Atoi(deviceIDStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid device_id"})
 			return
 		}
 
@@ -37,13 +45,13 @@ func TSDBDeviceHistoryHandler(db *database.Database, tsdbURL string) http.Handle
 			dur = 30 * time.Minute
 		}
 
-		history, err := tsdbClient.FetchDeviceMetricsHistory(r.Context(), ip, dur)
+		history, err := tsdbClient.FetchDeviceMetricsHistory(r.Context(), deviceIDStr, dur)
 		if err != nil || len(history) == 0 {
 			if err != nil {
-				log.Printf("[TSDB] Device history query failed for %s: %v, falling back to SQL", ip, err)
+				log.Printf("[TSDB] Device history query failed for device_id %s: %v, falling back to SQL", deviceIDStr, err)
 			}
 			// Fallback to SQL
-			sqlHistory, sqlErr := db.GetMetricsHistoryByIP(r.Context(), ip)
+			sqlHistory, sqlErr := db.GetMetricsHistoryByDeviceID(r.Context(), devID)
 			if sqlErr != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode([]map[string]interface{}{})

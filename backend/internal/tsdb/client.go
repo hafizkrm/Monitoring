@@ -126,8 +126,8 @@ func (c *PrometheusClient) FetchGlobalBandwidthHistory(ctx context.Context, dura
 	return results, nil
 }
 
-// FetchDeviceMetricsHistory returns CPU, memory, latency, packet_loss history for a single device IP.
-func (c *PrometheusClient) FetchDeviceMetricsHistory(ctx context.Context, ip string, duration time.Duration) ([]map[string]interface{}, error) {
+// FetchDeviceMetricsHistory returns CPU, memory, latency, packet_loss history for a single device ID.
+func (c *PrometheusClient) FetchDeviceMetricsHistory(ctx context.Context, deviceID string, duration time.Duration) ([]map[string]interface{}, error) {
 	end := time.Now()
 	start := end.Add(-duration)
 	step := "30s"
@@ -144,12 +144,12 @@ func (c *PrometheusClient) FetchDeviceMetricsHistory(ctx context.Context, ip str
 	}
 
 	queries := []metricQuery{
-		{fmt.Sprintf(`nms_device_cpu_usage_percent{ip="%s"}`, ip), "cpu"},
-		{fmt.Sprintf(`nms_device_memory_usage_percent{ip="%s"}`, ip), "memory"},
-		{fmt.Sprintf(`nms_device_ping_latency_ms{ip="%s"}`, ip), "latency"},
-		{fmt.Sprintf(`nms_device_packet_loss_percent{ip="%s"}`, ip), "packet_loss"},
-		{fmt.Sprintf(`nms_device_rx_rate_mbps{ip="%s"}`, ip), "rx_rate"},
-		{fmt.Sprintf(`nms_device_tx_rate_mbps{ip="%s"}`, ip), "tx_rate"},
+		{fmt.Sprintf(`nms_device_cpu_usage_percent{device_id="%s"}`, deviceID), "cpu"},
+		{fmt.Sprintf(`nms_device_memory_usage_percent{device_id="%s"}`, deviceID), "memory"},
+		{fmt.Sprintf(`nms_device_latency_seconds{device_id="%s"}`, deviceID), "latency"},
+		{fmt.Sprintf(`nms_device_packet_loss_percent{device_id="%s"}`, deviceID), "packet_loss"},
+		{fmt.Sprintf(`nms_device_rx_bytes_per_second{device_id="%s"}`, deviceID), "rx_rate"},
+		{fmt.Sprintf(`nms_device_tx_bytes_per_second{device_id="%s"}`, deviceID), "tx_rate"},
 	}
 
 	// Use a unified time-keyed map
