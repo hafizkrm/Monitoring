@@ -65,7 +65,7 @@ type DatabaseClient interface {
 	UpdateDeviceLastPolledAt(ctx context.Context, deviceID int) error
 	InsertPollingLog(ctx context.Context, deviceID int, status string, message string, durationMs int) error
 	InsertActivityLog(ctx context.Context, userId *int64, username string, action string, module string, description string, ipAddress string) error
-	CleanupOldData(ctx context.Context, metricsDays int, logsDays int) error
+	CleanupOldData(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error)
 	GetLatestMetrics(ctx context.Context) ([]map[string]interface{}, error)
 }
 

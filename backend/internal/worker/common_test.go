@@ -25,7 +25,7 @@ type MockDatabase struct {
 	UpdateDeviceLastPolledAtFunc    func(ctx context.Context, deviceID int) error
 	InsertPollingLogFunc            func(ctx context.Context, deviceID int, status string, message string, durationMs int) error
 	InsertActivityLogFunc           func(ctx context.Context, userId *int64, username string, action string, module string, description string, ipAddress string) error
-	CleanupOldDataFunc              func(ctx context.Context, metricsDays int, logsDays int) error
+	CleanupOldDataFunc              func(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error)
 	GetLatestMetricsFunc            func(ctx context.Context) ([]map[string]interface{}, error)
 }
 
@@ -78,11 +78,11 @@ func (m *MockDatabase) InsertPollingLog(ctx context.Context, deviceID int, statu
 	return nil
 }
 
-func (m *MockDatabase) CleanupOldData(ctx context.Context, metricsDays int, logsDays int) error {
+func (m *MockDatabase) CleanupOldData(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error) {
 	if m.CleanupOldDataFunc != nil {
 		return m.CleanupOldDataFunc(ctx, metricsDays, logsDays)
 	}
-	return nil
+	return map[string]int64{}, nil
 }
 
 func (m *MockDatabase) InsertActivityLog(ctx context.Context, userId *int64, username string, action string, module string, description string, ipAddress string) error {

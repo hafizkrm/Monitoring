@@ -501,18 +501,36 @@ func (m *Manager) startCleanupTask(
 				nil,
 			)
 
-			// Perform actual cleanup - remove data older than retention days
-			if err := m.db.CleanupOldData(ctx, m.config.Polling.MetricsRetentionDays, m.config.Polling.LogsRetentionDays); err != nil {
+			start := time.Now()
+			stats, err := m.db.CleanupOldData(ctx, m.config.Polling.MetricsRetentionDays, m.config.Polling.LogsRetentionDays)
+			duration := time.Since(start).Seconds()
+
+			cleanupDurationSeconds.Observe(duration)
+
+			for table, rows := range stats {
+				if rows > 0 {
+					cleanupRowsDeletedTotal.WithLabelValues(table).Add(float64(rows))
+				}
+			}
+
+			if err != nil {
+				cleanupExecutionsTotal.WithLabelValues("error").Inc()
 				m.logger.Error(
 					"cleanup task failed",
 					map[string]interface{}{
 						"error": err,
+						"stats": stats,
+						"duration_sec": duration,
 					},
 				)
 			} else {
+				cleanupExecutionsTotal.WithLabelValues("success").Inc()
 				m.logger.Info(
 					"cleanup task completed",
-					nil,
+					map[string]interface{}{
+						"stats": stats,
+						"duration_sec": duration,
+					},
 				)
 			}
 		}

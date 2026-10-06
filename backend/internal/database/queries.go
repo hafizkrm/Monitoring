@@ -1543,28 +1543,37 @@ func (db *Database) SyncOfflineAlerts(ctx context.Context) error {
 	return nil
 }
 
-func (db *Database) CleanupOldData(ctx context.Context, metricsDays int, logsDays int) error {
+func (db *Database) CleanupOldData(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error) {
 	// P1-14 / P0-15: Retention Optimization - Batched Deletes
 	// Prevent database locking and transaction log explosion by deleting in chunks
 
+	stats := make(map[string]int64)
+	var errs []string
+
 	deleteInBatches := func(tableName string, timeCol string, days int) error {
 		query := fmt.Sprintf(`DELETE FROM %s WHERE %s < DATE_SUB(NOW(), INTERVAL ? DAY) LIMIT 5000`, tableName, timeCol)
+		var totalDeleted int64 = 0
 		for {
 			select {
 			case <-ctx.Done():
+				stats[tableName] = totalDeleted
 				return ctx.Err()
 			default:
 			}
 
 			res, err := db.ExecContext(ctx, query, days)
 			if err != nil {
+				stats[tableName] = totalDeleted
 				return fmt.Errorf("failed to batch delete %s: %w", tableName, err)
 			}
 
 			affected, err := res.RowsAffected()
 			if err != nil {
+				stats[tableName] = totalDeleted
 				return err
 			}
+
+			totalDeleted += affected
 
 			if affected == 0 {
 				break // Done
@@ -1572,34 +1581,44 @@ func (db *Database) CleanupOldData(ctx context.Context, metricsDays int, logsDay
 			// Small sleep to yield DB resources to other queries (prevent locking)
 			time.Sleep(50 * time.Millisecond)
 		}
+		stats[tableName] = totalDeleted
 		return nil
 	}
 
 	if err := deleteInBatches("polling_logs", "created_at", logsDays); err != nil {
 		log.Printf("[WARNING] Cleanup polling_logs failed: %v", err)
+		errs = append(errs, err.Error())
 	}
 
-	if err := deleteInBatches("activity_logs", "timestamp", logsDays); err != nil {
+	if err := deleteInBatches("activity_logs", "created_at", logsDays); err != nil {
 		log.Printf("[WARNING] Cleanup activity_logs failed: %v", err)
+		errs = append(errs, err.Error())
 	}
 
 	if err := deleteInBatches("device_status_history", "created_at", logsDays); err != nil {
 		log.Printf("[WARNING] Cleanup device_status_history failed: %v", err)
+		errs = append(errs, err.Error())
 	}
 
 	if err := deleteInBatches("device_metrics", "collected_at", metricsDays); err != nil {
 		log.Printf("[WARNING] Cleanup device_metrics failed: %v", err)
+		errs = append(errs, err.Error())
 	}
 
 	if err := deleteInBatches("interface_metrics", "collected_at", metricsDays); err != nil {
 		log.Printf("[WARNING] Cleanup interface_metrics failed: %v", err)
+		errs = append(errs, err.Error())
 	}
 
 	// Note: The previous downsampling query (DELETE JOIN) was highly destructive and caused massive table locks.
 	// It has been disabled in favor of standard retention deletion.
 	// To implement proper downsampling, an aggregation table (e.g. device_metrics_hourly) should be used.
 
-	return nil
+	if len(errs) > 0 {
+		return stats, fmt.Errorf("cleanup completed with errors: %s", strings.Join(errs, "; "))
+	}
+
+	return stats, nil
 }
 
 // GetGlobalBandwidthHistory returns aggregated historical bandwidth for gateway devices (routers/firewalls)
