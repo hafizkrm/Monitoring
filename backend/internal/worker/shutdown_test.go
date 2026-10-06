@@ -8,8 +8,17 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/transport/websocket"
 )
+
+type mockEventPublisher struct {
+	onPublish func(e contracts.DomainEvent)
+}
+
+func (m *mockEventPublisher) Publish(e contracts.DomainEvent) {
+	if m.onPublish != nil {
+		m.onPublish(e)
+	}
+}
 
 func TestGracefulShutdown(t *testing.T) {
 	if testing.Short() {
@@ -23,8 +32,6 @@ func TestGracefulShutdown(t *testing.T) {
 		},
 	}
 
-	hub := websocket.NewHub()
-	go hub.Run()
 
 	mockDB := &MockDatabase{
 		GetAllEnabledDevicesFunc: func(ctx context.Context) ([]models.Device, error) {
@@ -44,8 +51,10 @@ func TestGracefulShutdown(t *testing.T) {
 	
 	// Simulate active WebSocket broadcast stream
 	wsMessages := 0
-	wm.SetWSBroadcast(func(e contracts.WSEventEnvelope) {
-		wsMessages++
+	wm.SetEventPublisher(&mockEventPublisher{
+		onPublish: func(e contracts.DomainEvent) {
+			wsMessages++
+		},
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())

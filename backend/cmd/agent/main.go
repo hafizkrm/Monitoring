@@ -25,8 +25,10 @@ import (
 	// New NMS Architecture Packages (Kept Websocket)
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
+
+	"github.com/hafizkrm/Monitoring/backend/internal/transport/eventbus"
 	nms_websocket "github.com/hafizkrm/Monitoring/backend/internal/transport/websocket"
+	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/devices"
 	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/incidents"
@@ -141,18 +143,24 @@ func main() {
 	// ==========================================
 	// WebSocket Real-time Hub
 	// ==========================================
+	eBus := eventbus.NewInMemoryEventBus()
+	defer eBus.Shutdown()
+
 	wsHub := nms_websocket.NewHub()
+	wsHub.SetEventBus(eBus)
 	go wsHub.Run()
 
-	// PHASE 1: WebSocket Integration Bridge (Event-Driven)
-	manager.SetWSBroadcast(func(msg contracts.WSEventEnvelope) {
-		wsHub.BroadcastMessage(msg)
-	})
+	// PHASE 4: Worker/DeviceManager directly uses EventBus (Publisher)
+	manager.SetEventPublisher(eBus)
 
 	r.With(nms_middleware.RateLimitMiddleware(limiter), nms_middleware.AuthMiddleware(cfg)).Get("/ws", func(w http.ResponseWriter, req *http.Request) {
 		nms_websocket.ServeWS(wsHub, w, req)
 	})
 	log.Info("Sprint 1 Core Platform Initialized", nil)
+	// M7: Phase 3 TSDB Prometheus Exporter
+	tsdbExporter := tsdb.NewTSDBExporter(eBus)
+	go tsdbExporter.Start()
+
 	// ==========================================
 
 	// Prometheus TSDB Exporter Endpoint

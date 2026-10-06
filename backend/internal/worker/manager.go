@@ -37,7 +37,7 @@ type Manager struct {
 	lastUptime map[int]int64
 	mu         sync.RWMutex
 
-	wsBroadcast func(contracts.WSEventEnvelope)
+	eventPublisher contracts.EventPublisher
 }
 
 func NewManager(
@@ -86,8 +86,8 @@ func NewManager(
 	}
 }
 
-func (m *Manager) SetWSBroadcast(fn func(contracts.WSEventEnvelope)) {
-	m.wsBroadcast = fn
+func (m *Manager) SetEventPublisher(ep contracts.EventPublisher) {
+	m.eventPublisher = ep
 }
 
 func (m *Manager) Start(parentCtx context.Context) error {
@@ -333,14 +333,14 @@ func (m *Manager) processJob(
 		existing.UpdatedAt = time.Now()
 		cache.GetMetricsCache().Update(existing)
 
-		if isChanged && m.wsBroadcast != nil {
-			// Phase 1: Event-driven broadcast for offline status change
-			m.wsBroadcast(contracts.WSEventEnvelope{
-				Event:     contracts.EventMetricsUpdated,
-				Timestamp: time.Now(),
-				DeviceID:  fmt.Sprintf("%v", device.ID),
-				Payload:   *existing,
-			})
+		if isChanged && m.eventPublisher != nil {
+			// Phase 4: Event-driven broadcast for offline status change via EventBus
+			m.eventPublisher.Publish(contracts.NewDomainEvent(
+				"snmp-worker",
+				contracts.DomainEventMetricsUpdated,
+				fmt.Sprintf("%v", device.ID),
+				*existing,
+			))
 		}
 
 		return
@@ -432,14 +432,14 @@ func (m *Manager) processJob(
 
 		cache.GetMetricsCache().Update(newMetrics)
 
-		if isChanged && m.wsBroadcast != nil {
-			// Phase 1: Event-driven broadcast for metrics change
-			m.wsBroadcast(contracts.WSEventEnvelope{
-				Event:     contracts.EventMetricsUpdated,
-				Timestamp: time.Now(),
-				DeviceID:  fmt.Sprintf("%v", device.ID),
-				Payload:   *newMetrics,
-			})
+		if isChanged && m.eventPublisher != nil {
+			// Phase 4: Event-driven broadcast for metrics change via EventBus
+			m.eventPublisher.Publish(contracts.NewDomainEvent(
+				"snmp-worker",
+				contracts.DomainEventMetricsUpdated,
+				fmt.Sprintf("%v", device.ID),
+				*newMetrics,
+			))
 		}
 
 		// PHASE 3 (TSDB): Export metrics to Prometheus
