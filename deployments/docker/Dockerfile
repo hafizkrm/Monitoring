@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.26-alpine AS builder
+FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
@@ -23,8 +23,7 @@ WORKDIR /app
 # Copy binary from builder
 COPY --from=builder /app/viscod-agent .
 COPY config.yaml .
-COPY --from=builder /app/backend/internal/database/migrations ./migrations
-
+COPY --from=builder /app/internal/database/migrations ./migrations
 # Create log directory
 RUN mkdir -p ./var/log
 

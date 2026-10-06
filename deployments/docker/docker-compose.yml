@@ -14,7 +14,9 @@ services:
       - mysql_data:/var/lib/mysql
 
   agent:
-    build: .
+    build: 
+      context: ../../backend
+      dockerfile: ../deployments/docker/Dockerfile
     container_name: viscod-agent
     restart: always
     depends_on:
