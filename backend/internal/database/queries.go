@@ -1359,6 +1359,47 @@ func (db *Database) InsertDeviceMetric(ctx context.Context, metric *models.Devic
 	return err
 }
 
+func (db *Database) BatchInsertDeviceMetrics(ctx context.Context, metrics []*models.DeviceMetric) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
+	query := "INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, tx_rate, rx_rate, status, reachability_status, snmp_status, latency, packet_loss, jitter, uptime) VALUES "
+	vals := []interface{}{}
+	placeholders := []string{}
+
+	for _, metric := range metrics {
+		st := metric.Status
+		switch st {
+		case "", "online":
+			st = "up"
+		case "offline":
+			st = "down"
+		}
+
+		rSt := metric.ReachabilityStatus
+		if rSt == "" {
+			rSt = "unknown"
+		}
+		sSt := metric.SNMPStatus
+		if sSt == "" {
+			sSt = "unknown"
+		}
+
+		lat := metric.LatencyMs
+		if lat == 0 {
+			lat = metric.Latency
+		}
+
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		vals = append(vals, metric.DeviceID, metric.CPUUsage, metric.MemoryUsage, metric.TxRate, metric.RxRate, st, rSt, sSt, lat, metric.PacketLoss, metric.Jitter, metric.Uptime)
+	}
+
+	query += strings.Join(placeholders, ",")
+	_, err := db.ExecContext(ctx, query, vals...)
+	return err
+}
+
 func (db *Database) BatchInsertInterfaceMetrics(ctx context.Context, metrics []*models.InterfaceMetric) error {
 	if len(metrics) == 0 {
 		return nil

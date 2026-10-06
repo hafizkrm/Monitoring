@@ -45,6 +45,12 @@ type MetricsRepository interface {
 		metric *models.DeviceMetric,
 	) error
 
+	BatchInsertDeviceMetrics(
+		ctx context.Context,
+		metrics []*models.DeviceMetric,
+	) error
+
+
 	BatchInsertInterfaceMetrics(
 		ctx context.Context,
 		metrics []*models.InterfaceMetric,

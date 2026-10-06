@@ -100,7 +100,7 @@ func TestManager_processJob(t *testing.T) {
 			db:         mockDB,
 			registry:   mockRegistry,
 			logger:     log,
-			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log),
+			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log, &MockRuleCache{}),
 			cb:         NewCircuitBreaker(5, 60*time.Second),
 			lastUptime: make(map[int]int64),
 			mu:         sync.RWMutex{},
@@ -135,7 +135,7 @@ func TestManager_processJob(t *testing.T) {
 			db:         mockDB,
 			registry:   mockRegistry,
 			logger:     log,
-			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log),
+			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log, &MockRuleCache{}),
 			cb:         NewCircuitBreaker(5, 60*time.Second),
 			lastUptime: make(map[int]int64),
 			mu:         sync.RWMutex{},
@@ -170,7 +170,7 @@ func TestManager_StartStop(t *testing.T) {
 		Polling: config.PollingConfig{
 			MaxWorkers: 2,
 		},
-	}, mockDB, log, mockRegistry)
+	}, mockDB, log, mockRegistry, &MockRuleCache{})
 
 	// Test Start
 	err := m.Start(ctx)

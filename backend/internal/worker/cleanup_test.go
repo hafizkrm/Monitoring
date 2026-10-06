@@ -28,7 +28,7 @@ func TestStartCleanupTask_Metrics(t *testing.T) {
 	}
 
 	mockLogger := &MockLogger{}
-	m := NewManager(cfg, mockDB, mockLogger, nil)
+	m := NewManager(cfg, mockDB, mockLogger, nil, &MockRuleCache{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -65,7 +65,7 @@ func TestStartCleanupTask_ErrorMetrics(t *testing.T) {
 	}
 
 	mockLogger := &MockLogger{}
-	m := NewManager(cfg, mockDB, mockLogger, nil)
+	m := NewManager(cfg, mockDB, mockLogger, nil, &MockRuleCache{})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go m.startCleanupTask(ctx)

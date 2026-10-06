@@ -73,7 +73,7 @@ func TestProcessor_ProcessMetrics(t *testing.T) {
 	mockRegistry := &MockRegistry{
 		GetFunc: func(name string) (Collector, error) { return &MockSNMP{}, nil },
 	}
-	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{})
+	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{}, &MockRuleCache{})
 
 	metrics := &models.TelemetrySnapshot{
 		DeviceID:    1,
@@ -116,7 +116,7 @@ func TestProcessor_EvaluateThresholds(t *testing.T) {
 	}
 	
 	mockRegistry := &MockRegistry{}
-	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{})
+	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{}, &MockRuleCache{})
 
 	t.Run("SNMP High CPU and RAM", func(t *testing.T) {
 		createdIncidents = nil // reset

@@ -17,11 +17,13 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
-	"github.com/hafizkrm/Monitoring/backend/internal/logger"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/icmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	"github.com/hafizkrm/Monitoring/backend/internal/repository"
+	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
 	// New NMS Architecture Packages (Kept Websocket)
 	"github.com/joho/godotenv"
@@ -111,8 +113,15 @@ func main() {
 	registry.Register("snmp", snmpAdapter)
 	registry.Register("icmp", icmpCollector)
 
+	// Initialize Threshold Rule Cache
+	thresholdRepo := repository.NewThresholdRepository(db.DB)
+	ruleCache := cache.NewThresholdRuleCache(thresholdRepo)
+	if err := ruleCache.Refresh(context.Background()); err != nil {
+		log.Error("Failed to initially refresh threshold rules", map[string]interface{}{"error": err})
+	}
+
 	// Initialize worker manager
-	manager := worker.NewManager(*cfg, db, log, registry)
+	manager := worker.NewManager(*cfg, db, log, registry, ruleCache)
 
 	// Initialize Rate Limiter globally
 	limiter := nms_middleware.NewIPRateLimiter(rate.Limit(100), 200) // 100 req/s, burst 200
@@ -235,6 +244,12 @@ func main() {
 			r.With(nms_middleware.RequireRole("admin")).Get("/api/settings", settingsHandler.GetAllSettings)
 			r.With(nms_middleware.RequireRole("admin")).Post("/api/settings", settingsHandler.UpsertSetting)
 			r.With(nms_middleware.RequireRole("admin")).Put("/api/settings", settingsHandler.UpsertSetting)
+
+			thresholdRulesHandler := settings.NewThresholdRulesHandler(thresholdRepo, ruleCache)
+			r.With(nms_middleware.RequireRole("admin")).Get("/api/threshold-rules", thresholdRulesHandler.GetAll)
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/threshold-rules", thresholdRulesHandler.Create)
+			r.With(nms_middleware.RequireRole("admin")).Put("/api/threshold-rules", thresholdRulesHandler.Update)
+			r.With(nms_middleware.RequireRole("admin")).Delete("/api/threshold-rules", thresholdRulesHandler.Delete)
 		})
 	})
 

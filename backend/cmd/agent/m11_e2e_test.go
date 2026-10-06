@@ -15,6 +15,7 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
+	"github.com/hafizkrm/Monitoring/backend/internal/models"
 	"github.com/hafizkrm/Monitoring/backend/internal/transport/eventbus"
 	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
@@ -22,6 +23,15 @@ import (
 
 // mockLogger for tests
 type mockLogger struct{}
+
+type mockRuleCache struct{}
+
+func (m *mockRuleCache) GetRulesForDevice(deviceID int) map[string]models.ThresholdRule {
+	return nil
+}
+func (m *mockRuleCache) Refresh(ctx context.Context) error {
+	return nil
+}
 
 func (m *mockLogger) Info(msg string, fields map[string]interface{})  {}
 func (m *mockLogger) Error(msg string, fields map[string]interface{}) {}
@@ -90,7 +100,8 @@ func TestM11_E2E_Phase3Exit(t *testing.T) {
 		},
 	}
 
-	mgr := worker.NewManager(cfg, db, logger, nil)
+	mockRuleCache := &mockRuleCache{}
+	mgr := worker.NewManager(cfg, db, logger, nil, mockRuleCache)
 	mgr.SetEventPublisher(bus)
 
 	ctx, cancel := context.WithCancel(context.Background())

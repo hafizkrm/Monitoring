@@ -20,6 +20,7 @@ type Processor struct {
 	workerCount  int
 
 	// For thresholds
+	ruleCache      cache.ThresholdRuleCache
 	mu             sync.Mutex
 	latencyStrikes map[int]int
 }
@@ -30,6 +31,7 @@ func NewProcessor(
 	metricRepo MetricsRepository,
 	incidentRepo IncidentRepository,
 	logger Logger,
+	ruleCache cache.ThresholdRuleCache,
 ) *Processor {
 
 	return &Processor{
@@ -38,6 +40,7 @@ func NewProcessor(
 		metricRepo:     metricRepo,
 		incidentRepo:   incidentRepo,
 		logger:         logger,
+		ruleCache:      ruleCache,
 		workerCount:    10,
 		latencyStrikes: make(map[int]int),
 	}
@@ -218,46 +221,67 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 		}
 	}
 
-	// 2. CPU Usage > 80% (Warning)
+	rules := p.ruleCache.GetRulesForDevice(deviceID)
+
+	// 2. CPU Usage
 	if metrics.HasCPU {
-		handleIncident(
-			metrics.CPUUsage >= 80.0,
-			"high_cpu",
-			fmt.Sprintf("Penggunaan CPU tinggi (%.1f%%)", metrics.CPUUsage),
-			fmt.Sprintf("Terdeteksi penggunaan CPU tinggi: %.1f%%", metrics.CPUUsage),
-		)
+		cpuRule, ok := rules["cpu"]
+		if !ok {
+			cpuRule = models.ThresholdRule{ThresholdValue: 80.0, IsActive: true}
+		}
+		if cpuRule.IsActive {
+			handleIncident(
+				metrics.CPUUsage >= cpuRule.ThresholdValue,
+				"high_cpu",
+				fmt.Sprintf("Penggunaan CPU tinggi (%.1f%%)", metrics.CPUUsage),
+				fmt.Sprintf("Terdeteksi penggunaan CPU tinggi: %.1f%%", metrics.CPUUsage),
+			)
+		}
 	}
 
-	// 3. Memory Usage > 85% (Warning)
+	// 3. Memory Usage
 	if metrics.HasMemory {
+		ramRule, ok := rules["memory"]
+		if !ok {
+			ramRule = models.ThresholdRule{ThresholdValue: 85.0, IsActive: true}
+		}
+		if ramRule.IsActive {
+			handleIncident(
+				metrics.MemoryUsage >= ramRule.ThresholdValue,
+				"high_ram",
+				fmt.Sprintf("Penggunaan Memori tinggi (%.1f%%)", metrics.MemoryUsage),
+				fmt.Sprintf("Terdeteksi penggunaan Memori tinggi: %.1f%%", metrics.MemoryUsage),
+			)
+		}
+	}
+
+	// 4. Ping Latency
+	latRule, ok := rules["latency"]
+	if !ok {
+		latRule = models.ThresholdRule{ThresholdValue: 80.0, StrikeCount: 2, IsActive: true}
+	}
+	if latRule.IsActive {
+		var strikeCount int
+		p.mu.Lock()
+		if metrics.LatencyMs >= int(latRule.ThresholdValue) {
+			p.latencyStrikes[deviceID]++
+			strikeCount = p.latencyStrikes[deviceID]
+		} else {
+			p.latencyStrikes[deviceID] = 0
+			strikeCount = 0
+		}
+		p.mu.Unlock()
+
 		handleIncident(
-			metrics.MemoryUsage >= 85.0,
-			"high_ram",
-			fmt.Sprintf("Penggunaan Memori tinggi (%.1f%%)", metrics.MemoryUsage),
-			fmt.Sprintf("Terdeteksi penggunaan Memori tinggi: %.1f%%", metrics.MemoryUsage),
+			metrics.LatencyMs >= int(latRule.ThresholdValue) && strikeCount >= latRule.StrikeCount,
+			"high_latency",
+			fmt.Sprintf("Latensi ping tinggi (%d ms)", metrics.LatencyMs),
+			fmt.Sprintf("Terdeteksi latensi ping tinggi: %d ms", metrics.LatencyMs),
 		)
 	}
-
-	// 4. Ping Latency > 80ms (Warning)
-	var strikeCount int
-	p.mu.Lock()
-	if metrics.LatencyMs >= 80 {
-		p.latencyStrikes[deviceID]++
-		strikeCount = p.latencyStrikes[deviceID]
-	} else {
-		p.latencyStrikes[deviceID] = 0
-		strikeCount = 0
-	}
-	p.mu.Unlock()
-
-	handleIncident(
-		metrics.LatencyMs >= 80 && strikeCount >= 2,
-		"high_latency",
-		fmt.Sprintf("Latensi ping tinggi (%d ms)", metrics.LatencyMs),
-		fmt.Sprintf("Terdeteksi latensi ping tinggi: %d ms", metrics.LatencyMs),
-	)
 
 	// 5. Packet Loss > 10% (Warning)
+	// (Keeping packet_loss hardcoded as it wasn't requested to be moved to dynamic rules)
 	handleIncident(
 		metrics.PacketLoss >= 10.0,
 		"packet_loss",

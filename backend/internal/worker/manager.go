@@ -36,6 +36,7 @@ type Manager struct {
 	mu         sync.RWMutex
 
 	eventPublisher contracts.EventPublisher
+	asyncMetricRepo *AsyncMetricsRepo
 }
 
 func NewManager(
@@ -43,6 +44,7 @@ func NewManager(
 	db DatabaseClient,
 	log logger.Logger,
 	registry CollectorRegistry,
+	ruleCache cache.ThresholdRuleCache,
 ) *Manager {
 
 	workers := cfg.Polling.MaxWorkers
@@ -54,12 +56,15 @@ func NewManager(
 	queueSize := 10000 // Enterprise scale default
 	jobQueue := make(chan Job, queueSize)
 
+	asyncMetricRepo := NewAsyncMetricsRepo(db, log, 5000, 5)
+
 	processor := NewProcessor(
 		registry,
 		db,
-		db,
+		asyncMetricRepo,
 		db,
 		log,
+		ruleCache,
 	)
 
 	scheduler := NewScheduler(
@@ -81,6 +86,7 @@ func NewManager(
 		jobQueue:   jobQueue,
 		cb:         NewCircuitBreaker(5, 30*time.Second),
 		lastUptime: map[int]int64{},
+		asyncMetricRepo: asyncMetricRepo,
 	}
 }
 
@@ -183,6 +189,10 @@ func (m *Manager) Stop() {
 	m.scheduler.Stop()
 
 	m.wg.Wait()
+
+	if m.asyncMetricRepo != nil {
+		m.asyncMetricRepo.Close()
+	}
 
 	m.started.Store(false)
 

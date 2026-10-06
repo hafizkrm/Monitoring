@@ -16,11 +16,27 @@ func (m *MockLogger) Warn(message string, fields map[string]interface{})  {}
 func (m *MockLogger) Error(message string, fields map[string]interface{}) {}
 func (m *MockLogger) Sync() error                                         { return nil }
 
+type MockRuleCache struct {
+	rules map[string]models.ThresholdRule
+}
+
+func (m *MockRuleCache) GetRulesForDevice(deviceID int) map[string]models.ThresholdRule {
+	if m.rules == nil {
+		m.rules = make(map[string]models.ThresholdRule)
+	}
+	return m.rules
+}
+
+func (m *MockRuleCache) Refresh(ctx context.Context) error {
+	return nil
+}
+
 // MockDatabase is a mock implementation of DatabaseClient
 type MockDatabase struct {
 	GetAllEnabledDevicesFunc        func(ctx context.Context) ([]models.Device, error)
 	UpdateDeviceStatusFunc          func(ctx context.Context, deviceID int, reachability string, snmpStatus string, overallStatus string) error
 	InsertDeviceMetricFunc          func(ctx context.Context, metric *models.DeviceMetric) error
+	BatchInsertDeviceMetricsFunc    func(ctx context.Context, metrics []*models.DeviceMetric) error
 	BatchInsertInterfaceMetricsFunc func(ctx context.Context, metrics []*models.InterfaceMetric) error
 	UpdateDeviceLastPolledAtFunc    func(ctx context.Context, deviceID int) error
 	InsertPollingLogFunc            func(ctx context.Context, deviceID int, status string, message string, durationMs int) error
@@ -51,6 +67,13 @@ func (m *MockDatabase) UpdateDeviceStatus(ctx context.Context, deviceID int, rea
 func (m *MockDatabase) InsertDeviceMetric(ctx context.Context, metric *models.DeviceMetric) error {
 	if m.InsertDeviceMetricFunc != nil {
 		return m.InsertDeviceMetricFunc(ctx, metric)
+	}
+	return nil
+}
+
+func (m *MockDatabase) BatchInsertDeviceMetrics(ctx context.Context, metrics []*models.DeviceMetric) error {
+	if m.BatchInsertDeviceMetricsFunc != nil {
+		return m.BatchInsertDeviceMetricsFunc(ctx, metrics)
 	}
 	return nil
 }
