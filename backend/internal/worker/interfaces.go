@@ -4,18 +4,23 @@ import (
 	"context"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
-// SNMP collector abstraction
-type SNMPClient interface {
-	CollectDeviceMetrics(
+// Collector abstraction
+type Collector interface {
+	Collect(
 		ctx context.Context,
 		device models.Device,
-	) (*snmp.DeviceMetrics, error)
+	) (*models.TelemetrySnapshot, error)
 
 	// GetNetworkStats performs a fast ICMP ping check (used for CB recovery)
 	GetNetworkStats(ctx context.Context, ip string) (latency int, jitter float64, loss float64, err error)
+}
+
+// CollectorRegistry abstraction
+type CollectorRegistry interface {
+	Register(name string, collector Collector)
+	Get(name string) (Collector, error)
 }
 
 // Device repository abstraction

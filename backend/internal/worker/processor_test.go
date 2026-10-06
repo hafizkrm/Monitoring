@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 func TestProcessor_validateMetrics(t *testing.T) {
@@ -16,12 +15,12 @@ func TestProcessor_validateMetrics(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		metrics *snmp.DeviceMetrics
+		metrics *models.TelemetrySnapshot
 		wantErr bool
 	}{
 		{
 			name: "Valid metrics",
-			metrics: &snmp.DeviceMetrics{
+			metrics: &models.TelemetrySnapshot{
 				CPUUsage:    50.0,
 				MemoryUsage: 50.0,
 			},
@@ -29,7 +28,7 @@ func TestProcessor_validateMetrics(t *testing.T) {
 		},
 		{
 			name: "CPU Usage too high (anomaly logged but no error returned currently)",
-			metrics: &snmp.DeviceMetrics{
+			metrics: &models.TelemetrySnapshot{
 				CPUUsage:    150.0,
 				MemoryUsage: 50.0,
 			},
@@ -37,7 +36,7 @@ func TestProcessor_validateMetrics(t *testing.T) {
 		},
 		{
 			name: "Negative memory usage (anomaly logged)",
-			metrics: &snmp.DeviceMetrics{
+			metrics: &models.TelemetrySnapshot{
 				CPUUsage:    50.0,
 				MemoryUsage: -10.0,
 			},
@@ -71,13 +70,16 @@ func TestProcessor_ProcessMetrics(t *testing.T) {
 		},
 	}
 
-	p := NewProcessor(&snmp.Client{}, mockDB, mockDB, mockDB, &MockLogger{})
+	mockRegistry := &MockRegistry{
+		GetFunc: func(name string) (Collector, error) { return &MockSNMP{}, nil },
+	}
+	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{})
 
-	metrics := &snmp.DeviceMetrics{
+	metrics := &models.TelemetrySnapshot{
 		DeviceID:    1,
 		CPUUsage:    45.0,
 		MemoryUsage: 60.0,
-		Interfaces: []snmp.InterfaceMetrics{
+		Interfaces: []models.InterfaceSnapshot{
 			{InterfaceIndex: 1, InterfaceName: "eth0", Status: "up"},
 		},
 		CollectedAt: time.Now(),
@@ -95,3 +97,61 @@ func TestProcessor_ProcessMetrics(t *testing.T) {
 		t.Error("expected interface metrics to be saved")
 	}
 }
+
+func TestProcessor_EvaluateThresholds(t *testing.T) {
+	ctx := context.Background()
+	var createdIncidents []string
+	
+	mockDB := &MockDatabase{
+		CreateIncidentFunc: func(ctx context.Context, deviceID int, incidentType string, description string) (int64, error) {
+			createdIncidents = append(createdIncidents, incidentType)
+			return 1, nil
+		},
+		GetActiveIncidentsByDeviceFunc: func(ctx context.Context, deviceID int) (map[string]int64, error) {
+			return make(map[string]int64), nil
+		},
+		CreateAlertFunc: func(ctx context.Context, incidentID interface{}, severity string, message string) error {
+			return nil
+		},
+	}
+	
+	mockRegistry := &MockRegistry{}
+	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{})
+
+	t.Run("SNMP High CPU and RAM", func(t *testing.T) {
+		createdIncidents = nil // reset
+		metrics := &models.TelemetrySnapshot{
+			DeviceID:    1,
+			HasCPU:      true,
+			CPUUsage:    95.0, // above 80
+			HasMemory:   true,
+			MemoryUsage: 90.0, // above 85
+			Status:      "up",
+		}
+		
+		p.evaluateThresholds(ctx, metrics.DeviceID, metrics)
+		
+		if len(createdIncidents) != 2 {
+			t.Errorf("expected 2 incidents (cpu, ram), got %d: %v", len(createdIncidents), createdIncidents)
+		}
+	})
+
+	t.Run("ICMP Unavailable CPU and RAM", func(t *testing.T) {
+		createdIncidents = nil // reset
+		metrics := &models.TelemetrySnapshot{
+			DeviceID:    2,
+			HasCPU:      false,
+			CPUUsage:    0.0,
+			HasMemory:   false,
+			MemoryUsage: 0.0,
+			Status:      "up",
+		}
+		
+		p.evaluateThresholds(ctx, metrics.DeviceID, metrics)
+		
+		if len(createdIncidents) > 0 {
+			t.Errorf("expected 0 incidents for ICMP, got %d: %v", len(createdIncidents), createdIncidents)
+		}
+	})
+}
+

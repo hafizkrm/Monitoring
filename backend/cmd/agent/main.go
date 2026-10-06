@@ -21,6 +21,7 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
 	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
+	"github.com/hafizkrm/Monitoring/backend/internal/icmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
 	// New NMS Architecture Packages (Kept Websocket)
 	"github.com/joho/godotenv"
@@ -101,8 +102,17 @@ func main() {
 	// Initialize SNMP client
 	snmpClient := snmp.NewClient(cfg, log)
 
+	// Wrap SNMP Client with M12 Collector Adapter
+	snmpAdapter := snmp.NewSNMPCollectorAdapter(snmpClient)
+	icmpCollector := icmp.NewICMPCollector()
+
+	// Create Collector Registry and register collectors
+	registry := worker.NewCollectorRegistry()
+	registry.Register("snmp", snmpAdapter)
+	registry.Register("icmp", icmpCollector)
+
 	// Initialize worker manager
-	manager := worker.NewManager(*cfg, db, log, snmpClient)
+	manager := worker.NewManager(*cfg, db, log, registry)
 
 	// Initialize Rate Limiter globally
 	limiter := nms_middleware.NewIPRateLimiter(rate.Limit(100), 200) // 100 req/s, burst 200

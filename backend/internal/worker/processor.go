@@ -9,11 +9,10 @@ import (
 
 	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 type Processor struct {
-	client       SNMPClient
+	registry     CollectorRegistry
 	deviceRepo   DeviceRepository
 	metricRepo   MetricsRepository
 	incidentRepo IncidentRepository
@@ -26,7 +25,7 @@ type Processor struct {
 }
 
 func NewProcessor(
-	client SNMPClient,
+	registry CollectorRegistry,
 	deviceRepo DeviceRepository,
 	metricRepo MetricsRepository,
 	incidentRepo IncidentRepository,
@@ -34,7 +33,7 @@ func NewProcessor(
 ) *Processor {
 
 	return &Processor{
-		client:         client,
+		registry:       registry,
 		deviceRepo:     deviceRepo,
 		metricRepo:     metricRepo,
 		incidentRepo:   incidentRepo,
@@ -44,7 +43,7 @@ func NewProcessor(
 	}
 }
 
-func (p *Processor) validateMetrics(metrics *snmp.DeviceMetrics) error {
+func (p *Processor) validateMetrics(metrics *models.TelemetrySnapshot) error {
 	if metrics == nil {
 		return errors.New("metrics cannot be nil")
 	}
@@ -70,7 +69,7 @@ func (p *Processor) validateMetrics(metrics *snmp.DeviceMetrics) error {
 	return nil
 }
 
-func (p *Processor) ProcessMetrics(ctx context.Context, metrics *snmp.DeviceMetrics) error {
+func (p *Processor) ProcessMetrics(ctx context.Context, metrics *models.TelemetrySnapshot) error {
 	if metrics == nil {
 		return errors.New("metrics cannot be nil")
 	}
@@ -155,7 +154,7 @@ func (p *Processor) ProcessMetrics(ctx context.Context, metrics *snmp.DeviceMetr
 	return nil
 }
 
-func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metrics *snmp.DeviceMetrics) {
+func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metrics *models.TelemetrySnapshot) {
 	// P0-13: Database Query Explosion Fix
 	// Load all active incidents ONCE instead of query per interface/threshold
 	activeIncidents, err := p.incidentRepo.GetActiveIncidentsByDevice(ctx, deviceID)
@@ -220,20 +219,24 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 	}
 
 	// 2. CPU Usage > 80% (Warning)
-	handleIncident(
-		metrics.CPUUsage >= 80.0,
-		"high_cpu",
-		fmt.Sprintf("Penggunaan CPU tinggi (%.1f%%)", metrics.CPUUsage),
-		fmt.Sprintf("Terdeteksi penggunaan CPU tinggi: %.1f%%", metrics.CPUUsage),
-	)
+	if metrics.HasCPU {
+		handleIncident(
+			metrics.CPUUsage >= 80.0,
+			"high_cpu",
+			fmt.Sprintf("Penggunaan CPU tinggi (%.1f%%)", metrics.CPUUsage),
+			fmt.Sprintf("Terdeteksi penggunaan CPU tinggi: %.1f%%", metrics.CPUUsage),
+		)
+	}
 
 	// 3. Memory Usage > 85% (Warning)
-	handleIncident(
-		metrics.MemoryUsage >= 85.0,
-		"high_ram",
-		fmt.Sprintf("Penggunaan Memori tinggi (%.1f%%)", metrics.MemoryUsage),
-		fmt.Sprintf("Terdeteksi penggunaan Memori tinggi: %.1f%%", metrics.MemoryUsage),
-	)
+	if metrics.HasMemory {
+		handleIncident(
+			metrics.MemoryUsage >= 85.0,
+			"high_ram",
+			fmt.Sprintf("Penggunaan Memori tinggi (%.1f%%)", metrics.MemoryUsage),
+			fmt.Sprintf("Terdeteksi penggunaan Memori tinggi: %.1f%%", metrics.MemoryUsage),
+		)
+	}
 
 	// 4. Ping Latency > 80ms (Warning)
 	var strikeCount int

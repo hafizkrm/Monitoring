@@ -19,8 +19,7 @@ type Manager struct {
 	config config.Config
 	logger logger.Logger
 	db     DatabaseClient
-
-	snmpClient SNMPClient
+	registry   CollectorRegistry
 	processor  *Processor
 	scheduler  *Scheduler
 
@@ -43,7 +42,7 @@ func NewManager(
 	cfg config.Config,
 	db DatabaseClient,
 	log logger.Logger,
-	snmpClient SNMPClient,
+	registry CollectorRegistry,
 ) *Manager {
 
 	workers := cfg.Polling.MaxWorkers
@@ -56,7 +55,7 @@ func NewManager(
 	jobQueue := make(chan Job, queueSize)
 
 	processor := NewProcessor(
-		snmpClient,
+		registry,
 		db,
 		db,
 		db,
@@ -74,7 +73,7 @@ func NewManager(
 		config:     cfg,
 		logger:     log,
 		db:         db,
-		snmpClient: snmpClient,
+		registry:   registry,
 		processor:  processor,
 		scheduler:  scheduler,
 		workers:    workers,
@@ -242,11 +241,18 @@ func (m *Manager) processJob(
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
+	collectorName := DetermineCollectorName(device)
+	collector, err := m.registry.Get(collectorName)
+	if err != nil {
+		m.logger.Error("unsupported collector", map[string]interface{}{"device": device.Name, "error": err})
+		return
+	}
+
 	if m.cb.IsBroken(device.ID) {
 		// Even when circuit is broken, try a fast ICMP ping to detect recovery early
 		pingCtx, pingCancel := context.WithTimeout(ctx, 6*time.Second)
 		defer pingCancel()
-		latency, _, loss, pingErr := m.snmpClient.GetNetworkStats(pingCtx, device.IPAddress)
+		latency, _, loss, pingErr := collector.GetNetworkStats(pingCtx, device.IPAddress)
 		if pingErr == nil && loss < 100 && latency > 0 {
 			// Device is back! Reset CB and update status immediately
 			m.cb.Reset(device.ID)
@@ -279,7 +285,7 @@ func (m *Manager) processJob(
 
 	start := time.Now()
 
-	metrics, err := m.snmpClient.CollectDeviceMetrics(
+	metrics, err := collector.Collect(
 		ctx,
 		*device,
 	)
@@ -292,7 +298,7 @@ func (m *Manager) processJob(
 		// SNMP polling failed. But is it completely DOWN or just SNMP DEGRADED?
 		pingCtx, pingCancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer pingCancel()
-		pingLatency, _, pingLoss, pingErr := m.snmpClient.GetNetworkStats(pingCtx, device.IPAddress)
+		pingLatency, _, pingLoss, pingErr := collector.GetNetworkStats(pingCtx, device.IPAddress)
 		
 		reachability := "down"
 		overallStatus := "down"

@@ -9,7 +9,6 @@ import (
 
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 func TestManager_CircuitBreaker(t *testing.T) {
@@ -89,16 +88,19 @@ func TestManager_processJob(t *testing.T) {
 			InsertDeviceMetricFunc: func(ctx context.Context, metric *models.DeviceMetric) error { return nil },
 		}
 		mockSNMP := &MockSNMP{
-			CollectDeviceMetricsFunc: func(ctx context.Context, device models.Device) (*snmp.DeviceMetrics, error) {
-				return &snmp.DeviceMetrics{DeviceID: device.ID, Status: "up", CollectedAt: time.Now()}, nil
+			CollectFunc: func(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error) {
+				return &models.TelemetrySnapshot{DeviceID: device.ID, Status: "up", CollectedAt: time.Now()}, nil
 			},
+		}
+		mockRegistry := &MockRegistry{
+			GetFunc: func(name string) (Collector, error) { return mockSNMP, nil },
 		}
 		log := &MockLogger{}
 		m := &Manager{
 			db:         mockDB,
-			snmpClient: mockSNMP,
+			registry:   mockRegistry,
 			logger:     log,
-			processor:  NewProcessor(mockSNMP, mockDB, mockDB, mockDB, log),
+			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log),
 			cb:         NewCircuitBreaker(5, 60*time.Second),
 			lastUptime: make(map[int]int64),
 			mu:         sync.RWMutex{},
@@ -121,16 +123,19 @@ func TestManager_processJob(t *testing.T) {
 			InsertPollingLogFunc: func(ctx context.Context, deviceID int, status, message string, durationMs int) error { return nil },
 		}
 		mockSNMP := &MockSNMP{
-			CollectDeviceMetricsFunc: func(ctx context.Context, device models.Device) (*snmp.DeviceMetrics, error) {
+			CollectFunc: func(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error) {
 				return nil, fmt.Errorf("snmp timeout")
 			},
+		}
+		mockRegistry := &MockRegistry{
+			GetFunc: func(name string) (Collector, error) { return mockSNMP, nil },
 		}
 		log := &MockLogger{}
 		m := &Manager{
 			db:         mockDB,
-			snmpClient: mockSNMP,
+			registry:   mockRegistry,
 			logger:     log,
-			processor:  NewProcessor(mockSNMP, mockDB, mockDB, mockDB, log),
+			processor:  NewProcessor(mockRegistry, mockDB, mockDB, mockDB, log),
 			cb:         NewCircuitBreaker(5, 60*time.Second),
 			lastUptime: make(map[int]int64),
 			mu:         sync.RWMutex{},
@@ -156,13 +161,16 @@ func TestManager_StartStop(t *testing.T) {
 		},
 	}
 	mockSNMP := &MockSNMP{}
+	mockRegistry := &MockRegistry{
+		GetFunc: func(name string) (Collector, error) { return mockSNMP, nil },
+	}
 	log := &MockLogger{}
 
 	m := NewManager(config.Config{
 		Polling: config.PollingConfig{
 			MaxWorkers: 2,
 		},
-	}, mockDB, log, mockSNMP)
+	}, mockDB, log, mockRegistry)
 
 	// Test Start
 	err := m.Start(ctx)

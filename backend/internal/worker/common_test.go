@@ -2,9 +2,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 )
 
 // MockLogger is a simple implementation of logger.Logger for testing
@@ -27,6 +27,11 @@ type MockDatabase struct {
 	InsertActivityLogFunc           func(ctx context.Context, userId *int64, username string, action string, module string, description string, ipAddress string) error
 	CleanupOldDataFunc              func(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error)
 	GetLatestMetricsFunc            func(ctx context.Context) ([]map[string]interface{}, error)
+	CreateIncidentFunc              func(ctx context.Context, deviceID int, incidentType string, description string) (int64, error)
+	ResolveIncidentFunc             func(ctx context.Context, deviceID int, incidentType string) error
+	GetActiveIncidentFunc           func(ctx context.Context, deviceID int, incidentType string) (int64, error)
+	GetActiveIncidentsByDeviceFunc  func(ctx context.Context, deviceID int) (map[string]int64, error)
+	CreateAlertFunc                 func(ctx context.Context, incidentID interface{}, alertType string, message string) error
 }
 
 func (m *MockDatabase) GetAllEnabledDevices(ctx context.Context) ([]models.Device, error) {
@@ -94,15 +99,15 @@ func (m *MockDatabase) InsertActivityLog(ctx context.Context, userId *int64, use
 
 // MockSNMP is a mock implementation of SNMPClient
 type MockSNMP struct {
-	CollectDeviceMetricsFunc func(ctx context.Context, device models.Device) (*snmp.DeviceMetrics, error)
+	CollectFunc func(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error)
 	GetNetworkStatsFunc      func(ctx context.Context, ip string) (int, float64, float64, error)
 }
 
-func (m *MockSNMP) CollectDeviceMetrics(ctx context.Context, device models.Device) (*snmp.DeviceMetrics, error) {
-	if m.CollectDeviceMetricsFunc != nil {
-		return m.CollectDeviceMetricsFunc(ctx, device)
+func (m *MockSNMP) Collect(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error) {
+	if m.CollectFunc != nil {
+		return m.CollectFunc(ctx, device)
 	}
-	return &snmp.DeviceMetrics{}, nil
+	return &models.TelemetrySnapshot{}, nil
 }
 
 func (m *MockSNMP) GetNetworkStats(ctx context.Context, ip string) (int, float64, float64, error) {
@@ -113,18 +118,52 @@ func (m *MockSNMP) GetNetworkStats(ctx context.Context, ip string) (int, float64
 	return 0, 0, 100, nil
 }
 
+// MockRegistry is a mock implementation of CollectorRegistry
+type MockRegistry struct {
+	GetFunc      func(name string) (Collector, error)
+	RegisterFunc func(name string, collector Collector)
+}
+
+func (m *MockRegistry) Register(name string, collector Collector) {
+	if m.RegisterFunc != nil {
+		m.RegisterFunc(name, collector)
+	}
+}
+
+func (m *MockRegistry) Get(name string) (Collector, error) {
+	if m.GetFunc != nil {
+		return m.GetFunc(name)
+	}
+	return nil, fmt.Errorf("mock registry default error")
+}
+
 func (m *MockDatabase) CreateIncident(ctx context.Context, deviceID int, incidentType string, description string) (int64, error) {
+	if m.CreateIncidentFunc != nil {
+		return m.CreateIncidentFunc(ctx, deviceID, incidentType, description)
+	}
 	return 1, nil
 }
 func (m *MockDatabase) ResolveIncident(ctx context.Context, deviceID int, incidentType string) error {
+	if m.ResolveIncidentFunc != nil {
+		return m.ResolveIncidentFunc(ctx, deviceID, incidentType)
+	}
 	return nil
 }
 func (m *MockDatabase) GetActiveIncident(ctx context.Context, deviceID int, incidentType string) (int64, error) {
+	if m.GetActiveIncidentFunc != nil {
+		return m.GetActiveIncidentFunc(ctx, deviceID, incidentType)
+	}
 	return 0, nil
 }
 func (m *MockDatabase) GetActiveIncidentsByDevice(ctx context.Context, deviceID int) (map[string]int64, error) {
+	if m.GetActiveIncidentsByDeviceFunc != nil {
+		return m.GetActiveIncidentsByDeviceFunc(ctx, deviceID)
+	}
 	return make(map[string]int64), nil
 }
 func (m *MockDatabase) CreateAlert(ctx context.Context, incidentID interface{}, alertType string, message string) error {
+	if m.CreateAlertFunc != nil {
+		return m.CreateAlertFunc(ctx, incidentID, alertType, message)
+	}
 	return nil
 }

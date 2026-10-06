@@ -46,8 +46,11 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 
 	mockSNMP := &MockSNMP{}
+	mockRegistry := &MockRegistry{
+		GetFunc: func(name string) (Collector, error) { return mockSNMP, nil },
+	}
 
-	wm := NewManager(cfg, mockDB, &MockLogger{}, mockSNMP)
+	wm := NewManager(cfg, mockDB, &MockLogger{}, mockRegistry)
 	
 	// Simulate active WebSocket broadcast stream
 	wsMessages := 0
