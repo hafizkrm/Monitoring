@@ -17,7 +17,7 @@ if command -v docker-compose >/dev/null 2>&1; then
     COMPOSE_CMD="docker-compose"
 fi
 
-cd ../../backend
+cd ../../deployments/docker
 
 echo "[Docker] Scenario A: Fresh Migration Test"
 $COMPOSE_CMD down -v || true
@@ -36,11 +36,11 @@ echo "Fresh migration passed."
 echo "[Docker] Scenario B: Missing Migration Fail-Fast Test"
 $COMPOSE_CMD down -v || true
 # Move migrations directory temporarily
-mv database/migrations database/migrations_bak
+mv ../../backend/migrations ../../backend/migrations_bak
 if $COMPOSE_CMD up -d --build; then
     sleep 5
     LOGS=$($COMPOSE_CMD logs agent)
-    mv database/migrations_bak database/migrations
+    mv ../../backend/migrations_bak ../../backend/migrations
     if echo "$LOGS" | grep -qi "fatal"; then
         echo "Fail-fast verified."
         $COMPOSE_CMD down -v
@@ -54,7 +54,7 @@ if $COMPOSE_CMD up -d --build; then
 else
     # Up failed (might fail-fast at container start)
     LOGS=$($COMPOSE_CMD logs agent)
-    mv database/migrations_bak database/migrations
+    mv ../../backend/migrations_bak ../../backend/migrations
     echo "Fail-fast verified (container exited immediately)."
     $COMPOSE_CMD down -v
     exit 0
