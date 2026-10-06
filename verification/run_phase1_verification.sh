@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # run_phase1_verification.sh
 # Main entrypoint for Phase 1 Residual Verification in Linux/CI/Staging.
+# All evidence is saved to verification/evidence/ directory.
 
 set -eo pipefail
 
 echo "============================================="
 echo "   NMS Phase 1 Verification Runner"
+echo "   $(date +'%Y-%m-%dT%H:%M:%S%z')"
 echo "============================================="
 
 # Ensure directories exist relative to the script location
@@ -22,94 +24,140 @@ log_status() {
     echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')] $step : $status" | tee -a $EVIDENCE_DIR/summary.log
 }
 
-echo "1. Linux CI Build & Race Detector"
-echo "---------------------------------"
-cd ../backend
+BACKEND_DIR="$VERIFICATION_ROOT/../backend"
 
-if ! go build -o /dev/null ./... 2>&1 | tee $EVIDENCE_DIR/1-build.log; then
-    log_status "Build" "FAIL"
-else
+# =============================================
+# 1. Build
+# =============================================
+echo ""
+echo "=== 1. go build ./... ==="
+cd "$BACKEND_DIR"
+if go build -o /dev/null ./... 2>&1 | tee $EVIDENCE_DIR/1-build.log; then
     log_status "Build" "PASS"
-fi
-
-if ! go test -v ./... 2>&1 | tee $EVIDENCE_DIR/2-test.log; then
-    log_status "Unit Test" "FAIL"
 else
-    log_status "Unit Test" "PASS"
+    log_status "Build" "FAIL"
 fi
 
+# =============================================
+# 2. Unit Tests
+# =============================================
+echo ""
+echo "=== 2. go test -v ./... ==="
+cd "$BACKEND_DIR"
+if go test -short -v ./... 2>&1 | tee $EVIDENCE_DIR/2-test.log; then
+    log_status "Unit Test" "PASS"
+else
+    log_status "Unit Test" "FAIL"
+fi
+
+# =============================================
+# 3. Race Detector
+# =============================================
+echo ""
+echo "=== 3. go test -race -v ./... ==="
+cd "$BACKEND_DIR"
 if command -v gcc >/dev/null 2>&1; then
-    if ! CGO_ENABLED=1 go test -race -v ./... 2>&1 | tee $EVIDENCE_DIR/3-race.log; then
-        log_status "Race Detector" "FAIL"
-    else
+    if CGO_ENABLED=1 go test -short -race -v ./... 2>&1 | tee $EVIDENCE_DIR/3-race.log; then
         log_status "Race Detector" "PASS"
+    else
+        log_status "Race Detector" "FAIL"
     fi
 else
     echo "GCC not found. Race detector BLOCKED." | tee $EVIDENCE_DIR/3-race.log
     log_status "Race Detector" "BLOCKED"
 fi
 
-cd $VERIFICATION_ROOT
-
-echo "2. Docker Migration Verification"
-echo "--------------------------------"
-if bash docker/run.sh > $EVIDENCE_DIR/4-5-docker.log 2>&1; then
-    log_status "Docker Migration" "PASS"
+# =============================================
+# 4-5. Docker Migration Verification
+# =============================================
+echo ""
+echo "=== 4-5. Docker Migration (Fresh + Fail-Fast) ==="
+cd "$VERIFICATION_ROOT"
+if command -v docker >/dev/null 2>&1; then
+    if bash docker/run.sh 2>&1 | tee $EVIDENCE_DIR/4-5-docker.log; then
+        log_status "Docker Fresh Migration" "PASS"
+        log_status "Docker Fail-Fast" "PASS"
+    else
+        log_status "Docker Migration" "FAIL"
+    fi
 else
-    log_status "Docker Migration" "FAIL/BLOCKED"
+    echo "Docker not available in this environment." | tee $EVIDENCE_DIR/4-5-docker.log
+    log_status "Docker Migration" "BLOCKED"
 fi
 
-echo "3. SNMP 30-Minute Stability Harness"
-echo "-----------------------------------"
-if bash snmp/run.sh > $EVIDENCE_DIR/6-snmp-30m.log 2>&1; then
-    log_status "SNMP 30m" "PASS"
+# =============================================
+# 6. SNMP 30-Minute Stability Test
+# =============================================
+echo ""
+echo "=== 6. SNMP 30-Minute Continuous Polling ==="
+cd "$BACKEND_DIR"
+echo "Starting SNMP 30-minute stability test at $(date +'%Y-%m-%dT%H:%M:%S%z')..."
+if go test -v -timeout 40m -run TestGoroutineStability30m ./internal/snmp 2>&1 | tee $EVIDENCE_DIR/6-snmp-30m.log; then
+    log_status "SNMP 30m Stability" "PASS"
 else
-    log_status "SNMP 30m" "FAIL/BLOCKED"
+    log_status "SNMP 30m Stability" "FAIL"
 fi
 
-echo "4. Database Profiling"
-echo "---------------------"
-cd ../backend
-# Assuming CI has a MySQL container running on 127.0.0.1:3306 as set up by verify.yml
+# =============================================
+# 7. Database Profiling
+# =============================================
+echo ""
+echo "=== 7. Database Profiling ==="
+cd "$BACKEND_DIR"
 if go test -v -run TestDatabaseProfiling ./internal/database 2>&1 | tee $EVIDENCE_DIR/7-db-profile.log; then
     log_status "Database Profiling" "PASS"
 else
     log_status "Database Profiling" "FAIL/BLOCKED"
 fi
-cd $VERIFICATION_ROOT
 
-echo "5. WebSocket Load Test"
-echo "----------------------"
-cd ../backend
+# =============================================
+# 8. WebSocket Load Test
+# =============================================
+echo ""
+echo "=== 8. WebSocket Load (200 Devices + Concurrent Clients) ==="
+cd "$BACKEND_DIR"
 if go test -v -run TestWSLoad200Devices ./internal/transport/websocket 2>&1 | tee $EVIDENCE_DIR/8-websocket-load.log; then
     log_status "WebSocket Load" "PASS"
 else
-    log_status "WebSocket Load" "FAIL/BLOCKED"
+    log_status "WebSocket Load" "FAIL"
 fi
-cd $VERIFICATION_ROOT
 
-echo "6. PromQL Runtime Verification"
-echo "------------------------------"
-cd ../backend
+# =============================================
+# 9. PromQL Runtime Matrix
+# =============================================
+echo ""
+echo "=== 9. PromQL Runtime Matrix ==="
+cd "$BACKEND_DIR"
 if go test -v -run TestTSDBQueryHandler_Limits ./internal/api/handlers/monitoring 2>&1 | tee $EVIDENCE_DIR/9-promql-matrix.log; then
     log_status "PromQL Runtime" "PASS"
 else
-    log_status "PromQL Runtime" "FAIL/BLOCKED"
+    log_status "PromQL Runtime" "FAIL"
 fi
-cd $VERIFICATION_ROOT
 
-echo "7. Graceful Shutdown Test"
-echo "-------------------------"
-cd ../backend
+# =============================================
+# 10. Graceful Shutdown
+# =============================================
+echo ""
+echo "=== 10. Graceful Shutdown ==="
+cd "$BACKEND_DIR"
 if go test -race -v -run TestGracefulShutdown ./internal/worker 2>&1 | tee $EVIDENCE_DIR/10-shutdown.log; then
     log_status "Graceful Shutdown" "PASS"
 else
-    log_status "Graceful Shutdown" "FAIL/BLOCKED"
+    log_status "Graceful Shutdown" "FAIL"
 fi
-cd $VERIFICATION_ROOT
 
+# =============================================
+# Summary
+# =============================================
+echo ""
 echo "============================================="
 echo "   Verification Run Complete"
-echo "   Check verification/evidence/ directory"
+echo "   $(date +'%Y-%m-%dT%H:%M:%S%z')"
 echo "============================================="
+echo ""
+echo "--- SUMMARY ---"
 cat $EVIDENCE_DIR/summary.log
+echo "----------------"
+echo ""
+echo "Evidence artifacts saved to: $EVIDENCE_DIR/"
+ls -la $EVIDENCE_DIR/

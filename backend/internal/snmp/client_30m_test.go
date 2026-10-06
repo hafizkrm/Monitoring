@@ -3,52 +3,77 @@ package snmp
 import (
 	"context"
 	"fmt"
+	"net"
 	"runtime"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/yourusername/viscod/internal/config"
+	"github.com/yourusername/viscod/internal/logger"
 	"github.com/yourusername/viscod/internal/models"
 )
 
-// TestGoroutineStability30m is the 30-minute SNMP load test harness.
+// TestGoroutineStability30m is the 30-minute SNMP continuous polling stability test.
+// It simulates 50 devices polling every 5 seconds against a blackhole UDP server
+// for 30 minutes, capturing goroutine/memory/request metrics at 5-minute intervals.
+//
+// Run: go test -v -timeout 40m -run TestGoroutineStability30m ./internal/snmp
+// Skip in short mode: go test -short ./internal/snmp
 func TestGoroutineStability30m(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping 30m stability test in short mode")
 	}
 
-	startGoroutines := runtime.NumGoroutine()
-	t.Logf("T0: Active Goroutines = %d", startGoroutines)
+	// Start a blackhole UDP server to simulate unresponsive SNMP agents
+	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
+	if err != nil {
+		t.Fatalf("Failed to start blackhole server: %v", err)
+	}
+	defer conn.Close()
+	port := conn.LocalAddr().(*net.UDPAddr).Port
 
-	cfg := config.SNMPConfig{
-		Timeout:   "1s", // intentionally short to force timeouts quickly
-		Retries:   1,
-		Community: "public",
-		Version:   "2c",
-		Port:      161,
+	cfg := &config.Config{
+		SNMP: config.SNMPConfig{
+			Port:      port,
+			Timeout:   "1s", // intentionally short to force rapid timeouts
+			Retries:   1,
+			Community: "public",
+			Version:   "2c",
+		},
 	}
 
-	client := NewClient(cfg)
+	dummyLog := logger.InitLogger(config.LoggerConfig{})
+	client := NewClient(cfg, dummyLog)
+	defer client.Close()
+
+	// Let the client stabilize
+	time.Sleep(1 * time.Second)
+
+	startGoroutines := runtime.NumGoroutine()
+	var startMem runtime.MemStats
+	runtime.ReadMemStats(&startMem)
+
+	t.Logf("T0: Goroutines=%d, HeapAlloc=%dMB, Requests=0, Timeouts/Errors=0",
+		startGoroutines, startMem.Alloc/1024/1024)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	deviceCount := 50
 	pollingInterval := 5 * time.Second
-	duration := 30 * time.Minute
 
 	var totalRequests int64
 	var totalErrors int64
 
-	// Start continuous polling workers
+	// Start continuous polling workers — 50 goroutines each polling every 5s
 	for i := 0; i < deviceCount; i++ {
 		go func(deviceID int) {
 			ticker := time.NewTicker(pollingInterval)
 			defer ticker.Stop()
-			// Use an IP address that doesn't route or drops packets (e.g. 192.0.2.x TEST-NET-1)
 			device := models.Device{
 				ID:        deviceID + 1,
-				IPAddress: fmt.Sprintf("192.0.2.%d", (deviceID%250)+1), 
+				IPAddress: fmt.Sprintf("127.0.0.%d", (deviceID%254)+1),
 			}
 			for {
 				select {
@@ -56,7 +81,6 @@ func TestGoroutineStability30m(t *testing.T) {
 					return
 				case <-ticker.C:
 					atomic.AddInt64(&totalRequests, 1)
-					// This will block and timeout
 					_, err := client.CollectDeviceMetrics(ctx, device)
 					if err != nil {
 						atomic.AddInt64(&totalErrors, 1)
@@ -66,9 +90,8 @@ func TestGoroutineStability30m(t *testing.T) {
 		}(i)
 	}
 
-	// Wait and observe
+	// Checkpoint intervals
 	checkpoints := []time.Duration{
-		0,
 		5 * time.Minute,
 		10 * time.Minute,
 		15 * time.Minute,
@@ -79,20 +102,30 @@ func TestGoroutineStability30m(t *testing.T) {
 
 	start := time.Now()
 	for _, cp := range checkpoints {
-		if cp > 0 {
-			time.Sleep(time.Until(start.Add(cp)))
-		}
+		sleepUntil := start.Add(cp)
+		time.Sleep(time.Until(sleepUntil))
+
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 		g := runtime.NumGoroutine()
 		reqs := atomic.LoadInt64(&totalRequests)
 		errs := atomic.LoadInt64(&totalErrors)
-		t.Logf("T%vm: Goroutines=%d, HeapAlloc=%vMB, Requests=%d, Timeouts/Errors=%d", 
+
+		t.Logf("T+%vm: Goroutines=%d, HeapAlloc=%dMB, Requests=%d, Timeouts/Errors=%d",
 			cp.Minutes(), g, m.Alloc/1024/1024, reqs, errs)
-		
-		if float64(g) > float64(startGoroutines)*3.0 + float64(deviceCount) + 50 {
-			t.Errorf("Goroutine leak detected at T%vm! Count: %d", cp.Minutes(), g)
+
+		// Goroutine bound: start + deviceCount + some slack (for cleanup goroutine, etc.)
+		maxAllowed := float64(startGoroutines) + float64(deviceCount) + 50
+		if float64(g) > maxAllowed {
+			t.Errorf("GOROUTINE LEAK at T+%vm! Count=%d, Max allowed=%.0f", cp.Minutes(), g, maxAllowed)
 			return
 		}
 	}
+
+	// Final summary
+	finalReqs := atomic.LoadInt64(&totalRequests)
+	finalErrs := atomic.LoadInt64(&totalErrors)
+	t.Logf("FINAL: Total Requests=%d, Total Errors=%d, Duration=%v",
+		finalReqs, finalErrs, time.Since(start))
+	t.Logf("RESULT: Goroutine count remained bounded throughout 30 minutes of continuous polling.")
 }

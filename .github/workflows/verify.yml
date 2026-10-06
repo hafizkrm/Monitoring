@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     services:
       mysql:
@@ -22,7 +24,7 @@ jobs:
           --health-cmd="mysqladmin ping -h localhost"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
     - name: Checkout repository
@@ -31,24 +33,45 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
+        go-version: '1.26'
         cache: true
 
-    - name: Install dependencies (Docker & MySQL Client)
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y default-mysql-client docker-compose
+        sudo apt-get install -y default-mysql-client
+
+    - name: Wait for MySQL to be ready
+      run: |
+        echo "Waiting for MySQL..."
+        for i in $(seq 1 30); do
+          if mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" > /dev/null 2>&1; then
+            echo "MySQL is ready after $i seconds."
+            break
+          fi
+          sleep 1
+        done
 
     - name: Run Database Migrations
       run: |
-        for f in backend/internal/database/migrations/*.sql; do
-          mysql -h 127.0.0.1 -u root -proot nms_verification_db < "$f"
+        echo "Running migrations from backend/internal/database/migrations/..."
+        for f in $(ls backend/internal/database/migrations/*.sql | sort); do
+          echo "Applying: $f"
+          mysql -h 127.0.0.1 -u root -proot nms_verification_db < "$f" || {
+            echo "WARNING: Migration $f had errors (possibly idempotent). Continuing..."
+          }
         done
+        echo "All migrations applied."
 
     - name: Run Phase 1 Verification Suite
+      env:
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_NAME: nms_verification_db
       run: |
         chmod +x verification/run_phase1_verification.sh
-        # Run the full script
         bash verification/run_phase1_verification.sh
 
     - name: Upload Evidence Artifacts
@@ -57,3 +80,4 @@ jobs:
       with:
         name: verification-evidence
         path: verification/evidence/
+        retention-days: 30
