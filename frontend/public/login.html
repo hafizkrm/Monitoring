@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NetMon - Portal Otentikasi Masuk Sistem Monitoring Jaringan Aman">
+    <title>NetMon - Login Portal</title>
+    <link rel="stylesheet" href="../src/shared/css/main.css">
+    <link rel="stylesheet" href="../src/shared/css/fontawesome.min.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: var(--text-main, #f8fafc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 30%, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.95) 70%), 
+                        url('assets/bg-login.png') center/cover no-repeat;
+            overflow-x: hidden;
+        }
+
+        /* Browser Autofill Fix for Dark Theme */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s !important;
+            box-shadow: inset 0 0 20px 20px rgba(15, 23, 42, 0.9) !important;
+        }
+
+        .login-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(10, 15, 30, 0.75) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75), 0 0 40px rgba(37, 99, 235, 0.22);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .login-container.shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .brand i {
+            font-size: 38px;
+            color: #3b82f6;
+            filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.6));
+        }
+
+        .brand .brand-text {
+            text-align: left;
+            line-height: 1.1;
+        }
+
+        .brand .brand-text h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #ffffff;
+        }
+
+        .brand .brand-text span {
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            color: #93c5fd;
+            text-transform: uppercase;
+        }
+
+        .login-header h2 {
+            margin: 0 0 6px 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .login-header p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .input-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin-bottom: 18px;
+            transition: all 0.25s ease;
+        }
+
+        .input-box:focus-within {
+            border-color: #3b82f6;
+            background: rgba(15, 23, 42, 0.85);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-box i.input-icon {
+            color: #64748b;
+            font-size: 17px;
+            margin-right: 14px;
+            width: 20px;
+            text-align: center;
+            transition: color 0.25s ease;
+        }
+
+        .input-box:focus-within i.input-icon {
+            color: #60a5fa;
+        }
+
+        .input-content {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .input-content label {
+            font-size: 11px;
+            color: #cbd5e1;
+            font-weight: 600;
+            margin-bottom: 3px;
+            letter-spacing: 0.3px;
+        }
+
+        .input-content input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 14px;
+            width: 100%;
+            padding: 2px 0;
+            font-family: inherit;
+        }
+
+        .input-content input::placeholder {
+            color: #64748b;
+        }
+
+        .toggle-password {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 6px;
+            margin-right: -4px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            color: #93c5fd;
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .toggle-password:focus-visible {
+            outline: 2px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            margin-top: -2px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-container input {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid #3b82f6;
+            border-radius: 5px;
+            background: rgba(15, 23, 42, 0.5);
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-container input:checked {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .checkbox-container input:checked::after {
+            content: '';
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-top: -2px;
+        }
+
+        .checkbox-container input:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
+        .checkbox-container span {
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        .forgot-password {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 500;
+            transition: color 0.2s ease, text-decoration 0.2s ease;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+
+        .forgot-password:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        .forgot-password:focus-visible {
+            outline: 2px solid #60a5fa;
+        }
+
+        .btn-login {
+            width: 100%;
+            height: 46px;
+            padding: 0 20px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.48);
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        }
+
+        .btn-login:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-login:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 3px;
+        }
+
+        .btn-login:disabled {
+            background: #334155;
+            color: #94a3b8;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.85;
+        }
+
+        .register-link {
+            text-align: center;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .register-link a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 500;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+
+        .register-link a:hover {
+            color: #93c5fd;
+            text-decoration: underline;
+        }
+
+        .register-link a:focus-visible {
+            outline: 2px solid #60a5fa;
+        }
+
+        .error-message {
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .error-message.visible {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .spinner {
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Glassmorphism Info Modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 32px 28px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(59, 130, 246, 0.25);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+        }
+
+        .modal-backdrop.active .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 16px auto;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4));
+        }
+
+        .modal-card h3 {
+            margin: 0 0 10px 0;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-card p {
+            margin: 0 0 24px 0;
+            color: #94a3b8;
+            font-size: 13.5px;
+            line-height: 1.55;
+        }
+
+        .btn-modal-close {
+            width: 100%;
+            height: 42px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-modal-close:hover {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            transform: translateY(-1px);
+        }
+
+        .btn-modal-close:focus-visible {
+            outline: 2px solid #60a5fa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-overlay"></div>
+
+    <div class="login-container" id="login-container">
+        <div class="login-header">
+            <div class="brand">
+                <i class="fas fa-network-wired" aria-hidden="true"></i>
+                <div class="brand-text">
+                    <h1>NETWORK</h1>
+                    <span>CONNECT</span>
+                </div>
+            </div>
+            <h2>Selamat Datang</h2>
+            <p>Silakan Masuk ke Portal Jaringan Aman</p>
+        </div>
+
+        <form id="login-form" novalidate>
+            <div class="input-box">
+                <i class="far fa-user input-icon" aria-hidden="true"></i>
+                <div class="input-content">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username"
+                        placeholder="Masukkan nama pengguna Anda" autofocus>
+                </div>
+            </div>
+
+            <div class="input-box">
+                <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                <div class="input-content">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password"
+                        placeholder="Masukkan password">
+                </div>
+                <button type="button" class="toggle-password" id="toggle-password" 
+                        aria-label="Tampilkan atau sembunyikan kata sandi" aria-pressed="false" title="Lihat/Sembunyikan Password">
+                    <i class="far fa-eye" id="toggle-icon" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="remember" checked>
+                    <span>Ingat Saya</span>
+                </label>
+                <a href="javascript:void(0)" class="forgot-password" id="btn-forgot">Lupa Password?</a>
+            </div>
+
+            <div class="error-message" id="error-msg" role="alert" aria-live="assertive">
+                <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                <span id="error-text"></span>
+            </div>
+
+            <button type="submit" class="btn-login" id="btn-submit">
+                <span>MASUK</span>
+            </button>
+
+            <div class="register-link">
+                Belum punya akun? <a href="javascript:void(0)" id="btn-register">Daftar Sekarang</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Glassmorphism Modal Dialog for Info Prompts -->
+    <div class="modal-backdrop" id="info-modal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-icon">
+                <i class="fas fa-user-shield" id="modal-icon"></i>
+            </div>
+            <h3 id="modal-title">Informasi Akun</h3>
+            <p id="modal-desc">Deskripsi informasi...</p>
+            <button type="button" class="btn-modal-close" id="modal-close-btn">Mengerti</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { login, isAuthenticated } from '../src/core/services/auth.service.js';
+
+        // Redirect if already authenticated
+        if (isAuthenticated()) {
+            window.location.href = 'index.html';
+        }
+
+        const loginContainer = document.getElementById('login-container');
+        const form = document.getElementById('login-form');
+        const submitBtn = document.getElementById('btn-submit');
+        const errorMsg = document.getElementById('error-msg');
+        const errorText = document.getElementById('error-text');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggle-icon');
+        const forgotBtn = document.getElementById('btn-forgot');
+        const registerBtn = document.getElementById('btn-register');
+
+        // Modal Elements
+        const infoModal = document.getElementById('info-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        function openModal(title, description, iconClass = 'fa-user-shield') {
+            modalTitle.textContent = title;
+            modalDesc.textContent = description;
+            modalIcon.className = `fas ${iconClass}`;
+            infoModal.classList.add('active');
+            infoModal.setAttribute('aria-hidden', 'false');
+            modalCloseBtn.focus();
+        }
+
+        function closeModal() {
+            infoModal.classList.remove('active');
+            infoModal.setAttribute('aria-hidden', 'true');
+        }
+
+        modalCloseBtn?.addEventListener('click', closeModal);
+        infoModal?.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && infoModal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Toggle Show/Hide Password with ARIA update
+        if (togglePasswordBtn && passwordInput) {
+            togglePasswordBtn.addEventListener('click', () => {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                toggleIcon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+                togglePasswordBtn.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+            });
+        }
+
+        // Sleek modal prompts for forgot password & registration links
+        forgotBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(
+                'Pemulihan Kata Sandi',
+                'Untuk menjaga keamanan portal monitoring jaringan, pemulihan kata sandi dilakukan terpusat oleh Network Administrator. Silakan hubungi Tim IT Infrastructure / System Admin.',
+                'fa-key'
+            );
+        });
+
+        registerBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(
+                'Pendaftaran Akun Baru',
+                'Portal NetMon menerapkan kebijakan akses terbatas. Hak akses dan pendaftaran akun baru hanya dapat dibuat langsung oleh Network Administrator.',
+                'fa-user-shield'
+            );
+        });
+
+        // Trigger shake effect on card on error
+        function triggerError(message, targetInput) {
+            errorText.textContent = message;
+            errorMsg.classList.add('visible');
+
+            loginContainer.classList.remove('shake');
+            // Force reflow
+            void loginContainer.offsetWidth;
+            loginContainer.classList.add('shake');
+
+            if (targetInput) {
+                targetInput.focus();
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = form.username.value.trim();
+            const password = form.password.value;
+            const remember = document.getElementById('remember').checked;
+
+            if (!username) {
+                triggerError('Silakan masukkan username Anda.', form.username);
+                return;
+            }
+
+            if (!password) {
+                triggerError('Silakan masukkan password Anda.', form.password);
+                return;
+            }
+
+            // Reset UI state
+            errorMsg.classList.remove('visible');
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-busy', 'true');
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch spinner" aria-hidden="true"></i><span>Memproses...</span>';
+
+            try {
+                await login(username, password, remember);
+
+                // Success, show transition feedback then redirect
+                submitBtn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i><span>Berhasil</span>';
+                submitBtn.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 300);
+
+            } catch (err) {
+                const errMsg = err.message || 'Terjadi kesalahan saat login';
+                const targetInput = errMsg.toLowerCase().includes('password') ? form.password : form.username;
+                
+                triggerError(errMsg, targetInput);
+
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.removeAttribute('aria-busy');
+                submitBtn.innerHTML = '<span>MASUK</span>';
+            }
+        });
+    </script>
+</body>
+
+</html>

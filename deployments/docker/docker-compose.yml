@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: viscod-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: monitoring
+      MYSQL_USER: viscod
+      MYSQL_PASSWORD: viscodpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  agent:
+    build: .
+    container_name: viscod-agent
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_USER=viscod
+      - DATABASE_PASSWORD=viscodpassword
+      - DATABASE_NAME=monitoring
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./var/log:/app/var/log
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:

@@ -1,0 +1,22 @@
+# Environment variables for Viscod systemd service
+# These can override config file values
+
+# Database
+# DB_HOST=localhost
+# DB_PORT=3306
+# DB_USER=root
+# DB_PASSWORD=your_password
+# DB_NAME=monitoring
+
+# Logging
+# LOG_LEVEL=INFO
+# LOG_PATH=/var/log/viscod
+
+# SNMP
+# SNMP_TIMEOUT=5s
+# SNMP_RETRIES=3
+# SNMP_COMMUNITY=public
+
+# Polling
+# POLLING_INTERVAL=60s
+# POLLING_MAX_WORKERS=50

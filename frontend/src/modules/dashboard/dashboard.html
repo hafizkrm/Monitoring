@@ -1,0 +1,606 @@
+<div id="view-dashboard" class="content-section" style="flex-direction: column; flex: 1; min-height: 0; height: 100%;">
+    <style>
+        /* Frontend Render Optimizations */
+        .card-content, .table-noc-wrapper, .cisco-switch-scroll-container {
+            contain: content; /* Isolates DOM recalculations */
+        }
+        .table-noc-wrapper, .cisco-switch-scroll-container {
+            content-visibility: auto; /* Skips rendering if off-screen */
+            contain-intrinsic-size: 300px;
+        }
+
+        /* Skeleton Loaders (Premium UX) */
+        @keyframes shimmer {
+            0% { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        .skeleton-block {
+            background: rgba(255, 255, 255, 0.03);
+            background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.08) 40px, rgba(255, 255, 255, 0.03) 80px);
+            background-size: 400px 100%;
+            background-repeat: no-repeat;
+            animation: shimmer 1.5s infinite linear;
+            border-radius: 6px;
+            height: 24px;
+            margin-bottom: 8px;
+        }
+    </style>
+    <!-- Top Stats -->
+    <div class="grid-top-stats" style="align-items: stretch;">
+        <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
+            onclick="window._pendingDeviceSearch=''; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            <div class="stat-icon blue">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">TOTAL PERANGKAT</span>
+                <div class="inline-util-4">
+                    <span id="stat-total-devices" class="inline-util-5">-</span>
+                    <span class="inline-util-12">Perangkat</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
+            onclick="window._pendingDeviceSearch='Online'; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            <div class="stat-icon green-trans">
+                <i class="fas fa-wifi"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">PERANGKAT AKTIF</span>
+                <div class="inline-util-4">
+                    <span id="stat-online" class="inline-util-5">-</span>
+                    <span class="inline-util-12">Perangkat</span>
+                </div>
+                <span id="stat-online-percentage" class="inline-util-6">-</span>
+            </div>
+        </div>
+
+        <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
+            onclick="window._pendingDeviceSearch='Offline'; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            <div class="stat-icon red-trans"
+                style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-wifi" style="opacity: 0.85;"></i>
+                <i class="fas fa-slash"
+                    style="position: absolute; color: var(--accent-red); font-size: 1.15em; font-weight: 900;"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">PERANGKAT OFFLINE</span>
+                <div class="inline-util-4">
+                    <span id="stat-offline" class="inline-util-5">-</span>
+                    <span class="inline-util-12">Perangkat</span>
+                </div>
+                <span id="stat-offline-percentage" style="font-size: 10px; color: var(--accent-red);">-</span>
+            </div>
+        </div>
+
+        <div class="stat-card inline-util-2">
+            <div class="stat-icon purple">
+                <i class="fas fa-wave-square"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">BANDWIDTH</span>
+                <div class="inline-util-4">
+                    <span id="stat-bandwidth" class="inline-util-5">—</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
+                    <div
+                        style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.12); padding: 3px 7px; border-radius: 6px; border: 1px solid rgba(6, 182, 212, 0.2);">
+                        <i class="fas fa-arrow-down" style="font-size: 10px;"></i>
+                        <span id="stat-bandwidth-download">—</span>
+                    </div>
+                    <div
+                        style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--accent-green); background: rgba(16, 185, 129, 0.12); padding: 3px 7px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <i class="fas fa-arrow-up" style="font-size: 10px;"></i>
+                        <span id="stat-bandwidth-upload">—</span>
+                    </div>
+                </div>
+                <span id="stat-bandwidth-note"
+                    style="display: none; font-size: 9.5px; color: var(--accent-orange); margin-top: 3px; white-space: normal; line-height: 1.25; word-break: break-word;"></span>
+            </div>
+        </div>
+
+        <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
+            onclick="document.querySelector('.nav-item[data-view=\'alerts\']')?.click();">
+            <div class="stat-icon orange">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">PERINGATAN AKTIF</span>
+                <div class="inline-util-4">
+                    <span id="stat-alerts" class="inline-util-5">-</span>
+                    <span class="inline-util-12">Alert</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card inline-util-2">
+            <div class="stat-icon cyan">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-card-content inline-util-20">
+                <span class="inline-util-3">RATA-RATA TIME AKTIF</span>
+                <div class="inline-util-4">
+                    <span id="stat-upTime" class="inline-util-5">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOC Command Center Grid -->
+    <div class="grid-noc">
+
+        <!-- KIRI (25%) -->
+        <div class="noc-col noc-scrollable">
+            <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fas fa-bell" style="color: var(--accent-red);"></i> PERINGATAN TERBARU</span>
+                    <a href="#" class="link-primary" onclick="if(window.switchView){window.switchView('alerts');} else { document.querySelector('.nav-item[data-view=\'alerts\']')?.click(); } return false;">Lihat Semua</a>
+                </div>
+                <div class="card-content" id="alerts-list-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block"></div>
+                    <div class="skeleton-block" style="width: 80%"></div>
+                    <div class="skeleton-block" style="width: 90%"></div>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+                    <span><i class="fas fa-tachometer-alt" style="color: #f59e0b;"></i> 5 LATENSI TERTINGGI</span>
+                    <select id="filter-latency-category" onchange="window.onLatencyCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-latency-category">
+                        <option value="all">Semua Tipe</option>
+                        <option value="router">Router</option>
+                        <option value="radio">Radio</option>
+                        <option value="access_point">Access Point</option>
+                        <option value="switch">Switch</option>
+                        <option value="firewall">Firewall</option>
+                    </select>
+                </div>
+                <div class="card-content" id="highest-latency-container"
+                    style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block" style="width: 100%"></div>
+                    <div class="skeleton-block" style="width: 85%"></div>
+                    <div class="skeleton-block" style="width: 95%"></div>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="card-header">
+                    <span><i class="fas fa-history" style="color: var(--accent-orange);"></i> BARU SAJA REBOOT</span>
+                </div>
+                <div class="card-content" id="recently-reboot-container"
+                    style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block"></div>
+                    <div class="skeleton-block" style="width: 70%"></div>
+                </div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="card-header">
+                    <span><i class="fas fa-user" style="color: #38bdf8;"></i> USER OPENVPN TERHUBUNG</span>
+                </div>
+                <div class="card-content" id="vpn-User-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block" style="width: 90%"></div>
+                    <div class="skeleton-block" style="width: 60%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TENGAH (50%) -->
+        <div class="noc-col noc-scrollable" style="flex: 1; display: flex; flex-direction: column; height: 100%;">
+
+            <div class="card"
+                style="padding: 8px 12px; flex: 1; min-height: 140px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">GRAFIK BANDWIDTH (REAL-TIME)</h2>
+                        <select id="bw-time-range" onchange="window.onBwTimeRangeChange && window.onBwTimeRangeChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="bw-time-range">
+                            <option value="30m">30 Menit</option>
+                            <option value="1h">1 Jam</option>
+                            <option value="6h">6 Jam</option>
+                            <option value="24h">24 Jam</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 14px; font-size: 11px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: #e2e8f0; font-weight: 500;">
+                            <span
+                                style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-blue);"></span>
+                            Unduh
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: #e2e8f0; font-weight: 500;">
+                            <span
+                                style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);"></span>
+                            Unggah
+                        </div>
+                    </div>
+                </div>
+                <div style="flex: 1; position: relative; min-height: 0; width: 100%;">
+                    <canvas id="bandwidthChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 6px 10px; flex-shrink: 0;">
+                <h2 style="font-size: 11px; font-weight: 700; margin: 0 0 8px 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">RINGKASAN PERFORMA JARINGAN <span style="font-weight: 400; color: #cbd5e1; font-size: 10px;">(REAL-TIME AVERAGE)</span></h2>
+                <div class="grid-perf">
+                    <div class="inline-util-9">
+                        <span class="inline-util-1">Rata-rata Bandwidth</span>
+                        <span id="perf-avg-bw" class="inline-util-10">0 Mbps</span>
+                        <span id="perf-avg-bw-trend" class="inline-util-6"><i class="fas fa-arrow-up"></i> 0.0%</span>
+                        <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
+                            class="inline-util-11">
+                            <path id="sparkline-avg-bw"
+                                d="M0,20 L10,15 L20,25 L30,10 L40,15 L50,5 L60,18 L70,12 L80,22 L90,8 L100,15"
+                                fill="none" stroke="var(--accent-blue)" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                    <div class="inline-util-9">
+                        <span class="inline-util-1">Bandwidth Mactionmal</span>
+                        <span id="perf-max-bw" class="inline-util-10">0 Mbps</span>
+                        <span id="perf-max-bw-trend" class="inline-util-6"><i class="fas fa-arrow-up"></i> 0.0%</span>
+                        <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
+                            class="inline-util-11">
+                            <path id="sparkline-max-bw"
+                                d="M0,25 L10,20 L20,22 L30,5 L40,10 L50,15 L60,8 L70,12 L80,5 L90,18 L100,20"
+                                fill="none" stroke="var(--accent-purple)" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                    <div class="inline-util-9">
+                        <span class="inline-util-1">Packet Loss</span>
+                        <span id="perf-packet-loss" class="inline-util-10">0.00%</span>
+                        <span id="perf-packet-loss-trend" class="inline-util-6"><i class="fas fa-arrow-down"></i>
+                            -0.0%</span>
+                        <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
+                            class="inline-util-11">
+                            <path id="sparkline-packet-loss"
+                                d="M0,25 L10,25 L20,20 L30,22 L40,28 L50,15 L60,25 L70,25 L80,20 L90,25 L100,25"
+                                fill="none" stroke="var(--accent-orange)" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                    <div class="inline-util-9">
+                        <span class="inline-util-1">Rata-rata Latensi</span>
+                        <span id="perf-latency" class="inline-util-10">0.0 ms</span>
+                        <span id="perf-latency-trend" class="inline-util-6"><i class="fas fa-arrow-down"></i>
+                            -0.0%</span>
+                        <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
+                            class="inline-util-11">
+                            <path id="sparkline-latency"
+                                d="M0,25 L10,24 L20,26 L30,22 L40,24 L50,23 L60,28 L70,22 L80,25 L90,24 L100,22"
+                                fill="none" stroke="var(--accent-green)" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                    <div class="inline-util-9">
+                        <span class="inline-util-1">Rata-rata Jitter</span>
+                        <span id="perf-jitter" class="inline-util-10">0.0 ms</span>
+                        <span id="perf-jitter-trend" class="inline-util-6"><i class="fas fa-arrow-down"></i>
+                            -0.0%</span>
+                        <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
+                            class="inline-util-11">
+                            <path id="sparkline-jitter"
+                                d="M0,28 L10,27 L20,29 L30,26 L40,28 L50,25 L60,29 L70,27 L80,28 L90,26 L100,28"
+                                fill="none" stroke="#14b8a6" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card"
+                style="display: flex; flex-direction: column; flex-shrink: 0; min-height: 145px;">
+                <div
+                    style="padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">STATUS PERANGKAT TERBARU</h2>
+                        <span id="dashboard-device-subtitle" style="font-size: 10px; color: var(--text-muted); font-weight: 400; text-transform: uppercase;">(TOP 5 TERBARU)</span>
+                    </div>
+                    <div class="filter-pills" style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="filter-pill active" onclick="filterDeviceTable('all', this)"><i class="fas fa-th-large" style="font-size: 10px; margin-right: 4px;"></i>Semua <span id="pill-count-all" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('router', this)"><i class="fas fa-server" style="font-size: 10px; margin-right: 4px; color: #3b82f6;"></i>Router <span id="pill-count-router" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('radio', this)"><i class="fas fa-broadcast-tower" style="font-size: 10px; margin-right: 4px; color: #f59e0b;"></i>Radio <span id="pill-count-radio" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('switch', this)"><i class="fas fa-network-wired" style="font-size: 10px; margin-right: 4px; color: #8b5cf6;"></i>Switch <span id="pill-count-switch" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('access_point', this)"><i class="fas fa-wifi" style="font-size: 10px; margin-right: 4px; color: #06b6d4;"></i>Access Point <span id="pill-count-ap" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('server', this)"><i class="fas fa-database" style="font-size: 10px; margin-right: 4px; color: #ec4899;"></i>Server <span id="pill-count-server" class="pill-badge">0</span></button>
+                        <button class="filter-pill" onclick="filterDeviceTable('firewall', this)"><i class="fas fa-shield-alt" style="font-size: 10px; margin-right: 4px; color: #ef4444;"></i>Firewall <span id="pill-count-firewall" class="pill-badge">0</span></button>
+                    </div>
+                </div>
+
+                <div class="table-noc-wrapper"
+                    style="overflow-x: hidden; position: relative; min-height: 120px; height: 135px; overflow-y: auto;">
+                    <table class="table-noc" id="dashboard-device-table"
+                        style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%; text-align: left;">PERANGKAT</th>
+                                <th style="width: 18%; text-align: center;">ALAMAT IP</th>
+                                <th style="width: 12%; text-align: center;">TIPE</th>
+                                <th style="width: 10%; text-align: center;">STATUS</th>
+                                <th style="width: 25%; text-align: center;">UPTIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-devices-table-body">
+                            <tr>
+                                <td><div class="skeleton-block" style="width: 75%; height: 12px; margin: 4px 0;"></div></td>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 60%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 50%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton-block" style="width: 70%; height: 12px; margin: 4px 0;"></div></td>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 60%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 50%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px 0;"></div></td>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 60%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 50%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px 0;"></div></td>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 60%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 50%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px auto;"></div></td>
+                            </tr>
+                            <tr>
+                                <td><div class="skeleton-block" style="width: 75%; height: 12px; margin: 4px 0;"></div></td>
+                                <td><div class="skeleton-block" style="width: 80%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 60%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 50%; height: 12px; margin: 4px auto;"></div></td>
+                                <td><div class="skeleton-block" style="width: 65%; height: 12px; margin: 4px auto;"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="dashboard-device-loading"
+                        style="display: none; padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                        <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                    </div>
+                </div>
+            </div>
+
+            <div class="card cisco-switch"
+                style="padding: 16px 22px; display: flex; flex-direction: column; gap: 12px; position: relative; flex-shrink: 0; background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 29, 0.98) 100%); border: 1px solid rgba(59, 130, 246, 0.25); box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+
+                <!-- Branding Row + Scroll Controls -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-network-wired" style="color: #0099ff; font-size: 18px;"></i>
+                            <span
+                                style="color: #0099ff; font-weight: 800; font-size: 16px; letter-spacing: 2px;">CISCO</span>
+                        </div>
+                        <div
+                            style="color: #e2e8f0; font-size: 12px; font-weight: 700; font-family: monospace; letter-spacing: 1px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 10px; border-radius: 5px;">
+                            C9200L-48P-4G</div>
+                        <div id="switch-hostname-label" style="color: rgba(255,255,255,0.65); font-size: 12px; font-weight: 500;"></div>
+                        <div id="switch-model-label" style="display:none;"></div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div id="switch-last-updated"
+                            style="font-size: 11px; color: rgba(255,255,255,0.4); font-family: monospace;"></div>
+                        <!-- Scroll Control Buttons -->
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <button type="button" id="btn-switch-scroll-left" title="Geser Port ke Kiri"
+                                style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s;">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" id="btn-switch-scroll-right" title="Geser Port ke Kanan"
+                                style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s;">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content: System LEDs + Ports + SFP + Summary -->
+                <div id="cisco-switch-scroll-container" class="cisco-switch-scroll-container">
+
+                    <!-- System LEDs -->
+                    <div style="display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; align-items: center;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <div class="led-blink"
+                                style="width: 11px; height: 11px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;">
+                            </div>
+                            <span
+                                style="font-size: 9px; color: rgba(255,255,255,0.6); font-weight: 700; letter-spacing: 0.5px;">SYST</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <div
+                                style="width: 11px; height: 11px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e;">
+                            </div>
+                            <span
+                                style="font-size: 9px; color: rgba(255,255,255,0.6); font-weight: 700; letter-spacing: 0.5px;">STAT</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <div style="width: 11px; height: 11px; border-radius: 50%; background: #374151;"></div>
+                            <span
+                                style="font-size: 9px; color: rgba(255,255,255,0.6); font-weight: 700; letter-spacing: 0.5px;">SPEED</span>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div style="width: 1px; height: 95px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+                    <!-- 48 Ports Grid: mengisi sisa ruang -->
+                    <div id="switch-ports-grid"
+                        style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: max-content;">
+                        <div style="display: flex; gap: 4px; align-items: center; opacity: 0.4;">
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.6);">Memuat data port via SNMP...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SFP Ports -->
+                    <div id="switch-sfp-ports"
+                        style="display: flex; gap: 12px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 18px; align-items: center; flex-shrink: 0;">
+                    </div>
+
+                    <!-- Divider -->
+                    <div style="width: 1px; height: 95px; background: rgba(255,255,255,0.15); flex-shrink: 0;"></div>
+
+                    <!-- Port Summary -->
+                    <div id="switch-port-summary"
+                        style="padding-left: 6px; font-size: clamp(11px, 0.35vw + 8px, 13.5px); color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; min-width: 210px; max-width: 350px;">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- KANAN (25%) -->
+        <div class="noc-col noc-scrollable noc-right">
+
+            <div class="card" id="device-type-card" style="display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <h2 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> Distribusi Tipe Perangkat
+                    </h2>
+                </div>
+                <div
+                    style="flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 4px;">
+                    <div class="dist-chart-wrapper"
+                        style="position: relative; width: 100px; height: 100px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                        <canvas id="distributionChart" width="100" height="100"></canvas>
+                        <div class="dist-chart-center"
+                            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+                            <span id="dist-total" class="dist-total-num"
+                                style="font-size: 18px; font-weight: 700; color: var(--text-main); display: block; line-height: 1;">0</span>
+                            <span class="dist-total-label"
+                                style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px;">Total</span>
+                        </div>
+                    </div>
+                    <div class="dist-legend-list"
+                        style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+                        <div class="dist-legend-item" id="dist-router-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-server" style="color: #3b82f6; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                Router
+                            </span>
+                            <span id="dist-router-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                        <div class="dist-legend-item" id="dist-switch-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-network-wired" style="color: #8b5cf6; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                Switch
+                            </span>
+                            <span id="dist-switch-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                        <div class="dist-legend-item" id="dist-radio-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-broadcast-tower" style="color: #f59e0b; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                Radio
+                            </span>
+                            <span id="dist-radio-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                        <div class="dist-legend-item" id="dist-ap-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-wifi" style="color: #06b6d4; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                AP
+                            </span>
+                            <span id="dist-ap-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                        <div class="dist-legend-item" id="dist-firewall-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-shield-alt" style="color: #ef4444; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                Firewall
+                            </span>
+                            <span id="dist-firewall-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                        <div class="dist-legend-item" id="dist-server-item"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 3px 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: all 0.2s ease;">
+                            <span class="dist-legend-label"
+                                style="font-size: 11px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fas fa-database" style="color: #ec4899; font-size: 11px; width: 14px; text-align: center; flex-shrink: 0;"></i>
+                                Server
+                            </span>
+                            <span id="dist-server-text" class="dist-legend-val"
+                                style="font-size: 11px; font-weight: 700; color: var(--text-main); white-space: nowrap; flex-shrink: 0; margin-left: 6px;">0 <span
+                                    style="font-size: 9px; color: var(--text-muted); font-weight: 400;">(0%)</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="top-cpu-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
+                <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px;">
+                    <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #cbd5e1;">
+                        <i class="fas fa-heartbeat" style="color: var(--accent-green);"></i> 5 Kesehatan Perangkat Teratas
+                    </span>
+                    <select id="filter-health-category" onchange="window.onHealthCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-health-category">
+                        <option value="all">Semua Tipe</option>
+                        <option value="router">Router</option>
+                        <option value="radio">Radio</option>
+                        <option value="access_point">Access Point</option>
+                        <option value="switch">Switch</option>
+                        <option value="firewall">Firewall</option>
+                        <option value="server">Server</option>
+                    </select>
+                </div>
+                <div class="card-content" id="top-health-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block"></div>
+                    <div class="skeleton-block" style="width: 85%"></div>
+                </div>
+            </div>
+
+            <div class="card" id="top-bw-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
+                <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px;">
+                    <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #cbd5e1;">
+                        <i class="fas fa-chart-bar" style="color: var(--accent-cyan);"></i> 5 Perangkat Bandwidth Tertinggi
+                    </span>
+                    <select id="filter-top-bw-category" onchange="window.onTopBwCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-top-bw-category">
+                        <option value="all">Semua Tipe</option>
+                        <option value="router">Router</option>
+                        <option value="access_point">Access Point</option>
+                        <option value="switch">Switch</option>
+                        <option value="firewall">Firewall</option>
+                    </select>
+                </div>
+                <div class="card-content" id="top-devices-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block"></div>
+                    <div class="skeleton-block" style="width: 90%"></div>
+                </div>
+            </div>
+
+            <div class="card" id="top-interface-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
+                <div class="card-header">
+                    <span><i class="fas fa-network-wired" style="color: var(--accent-purple);"></i> 5 LALU LINTAS ANTARMUKA TERTINGGI</span>
+                </div>
+                <div class="card-content" id="top-interfaces-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
+                    <div class="skeleton-block"></div>
+                    <div class="skeleton-block" style="width: 80%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>

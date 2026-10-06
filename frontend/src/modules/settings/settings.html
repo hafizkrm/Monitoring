@@ -1,0 +1,217 @@
+<!-- Settings.html -->
+<div class="content-section" id="view-Settings" style="display: none;">
+    
+    <div class="flex gap-6 h-full">
+        <!-- Settings Sidebar -->
+        <div class="w-64 flex-shrink-0">
+            <div class="glass-panel p-4 h-full">
+                <h2 class="mt-0 mb-5 font-semibold text-main tracking-wide text-sm">KATEGORI</h2>
+                <!-- Kategori Menu -->
+                <ul class="nav-menu flex flex-col gap-1">
+                    <li class="nav-item active" data-target="Settings-tab-general">
+                        <i class="fas fa-sliders-h" style="width: 20px;"></i> Umum
+                    </li>
+                    <li class="nav-item" data-target="Settings-tab-smtp">
+                        <i class="fas fa-envelope" style="width: 20px;"></i> SMTP / Email
+                    </li>
+                    <li class="nav-item" data-target="Settings-tab-snmp">
+                        <i class="fas fa-network-wired" style="width: 20px;"></i> SNMP Poller
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="flex-1 relative">
+            <div class="glass-panel p-8 min-h-500 relative">
+                
+                <!-- Tab: Umum -->
+                <div id="Settings-tab-general" class="Settings-tab-content active">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="m-0 mb-1 text-main text-lg">General Settings</h2>
+                            <p class="m-0 text-muted text-xs">Atur interval polling jaringan dan batas penyimpanan log.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="form-group">
+                            <label for="setting-general-poll" class="form-label">Interval Polling (Detik)</label>
+                            <input type="number" id="setting-general-poll" min="5" max="3600" class="form-control">
+                            <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Minimal 5 detik, mactionmal 3600 detik.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-general-retention" class="form-label">Retensi Log (Hari)</label>
+                            <input type="number" id="setting-general-retention" min="1" class="form-control">
+                            <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Lama data historis disave sebelum didelete otomatis.</span>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="setting-general-Timezone" class="form-label">Zona Time</label>
+                            <select id="setting-general-Timezone" class="form-control" aria-label="setting-general-Timezone">
+                                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: SMTP / Email -->
+                <div id="Settings-tab-smtp" class="Settings-tab-content" style="display: none;">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="m-0 mb-1 text-main text-lg">Notifikasi Email (SMTP)</h2>
+                            <p class="m-0 text-muted text-xs">Gunakan server SMTP ini untuk mengirim notifikasi peringatan perangkat mati.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-layout gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="setting-smtp-host" class="form-label">SMTP Host</label>
+                            <input type="text" id="setting-smtp-host" placeholder="smtp.gmail.com" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-smtp-port" class="form-label">SMTP Port</label>
+                            <input type="number" id="setting-smtp-port" placeholder="587" class="form-control">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="setting-smtp-Username" class="form-label">SMTP Username</label>
+                            <input type="text" id="setting-smtp-Username" placeholder="email@domain.com" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-smtp-Password" class="form-label">SMTP Password</label>
+                            <input type="Password" id="setting-smtp-Password" placeholder="********" class="form-control" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="form-group flex items-center gap-3">
+                        <label for="setting-smtp-tls" class="toggle-switch">
+                            <input type="checkbox" id="setting-smtp-tls">
+                            <span class="slider"></span>
+                        </label>
+                        <span style="font-size: 13px; color: var(--text-main);">Gunakan TLS / SSL Security</span>
+                    </div>
+                </div>
+
+                <!-- Tab: SNMP Poller -->
+                <div id="Settings-tab-snmp" class="Settings-tab-content" style="display: none;">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="m-0 mb-1 text-main text-lg">Global SNMP Configuration</h2>
+                            <p class="m-0 text-muted text-xs">Kredensial bawaan yang digunakan untuk memonitor perangkat baru secara otomatis.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-layout gap-6 mb-6">
+                        <div class="form-group">
+                            <label for="setting-snmp-version" class="form-label">SNMP Version</label>
+                            <select id="setting-snmp-version" class="form-control" aria-label="setting-snmp-version">
+                                <option value="v1">Version 1</option>
+                                <option value="v2c">Version 2c</option>
+                                <option value="v3">Version 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="snmp-community-group">
+                            <label for="setting-snmp-community" class="form-label">Community String</label>
+                            <input type="text" id="setting-snmp-community" placeholder="public" class="form-control">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div class="form-group">
+                            <label for="setting-snmp-Timeout" class="form-label">Timeout (Detik)</label>
+                            <input type="number" id="setting-snmp-Timeout" min="1" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-snmp-retries" class="form-label">Max Retries</label>
+                            <input type="number" id="setting-snmp-retries" min="0" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- v3 additional form (hidden by default) -->
+                    <div id="snmp-v3-group" class="mt-6 pt-6 border-t border-color" style="display: none;">
+                        <h4 class="mt-0 text-main text-sm">Kredensial SNMPv3</h4>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="form-group">
+                                <label for="setting-snmp-v3-User" class="form-label">Username</label>
+                                <input type="text" id="setting-snmp-v3-User" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-snmp-v3-auth" class="form-label">Auth Protocol</label>
+                                <select id="setting-snmp-v3-auth" class="form-control" aria-label="setting-snmp-v3-auth">
+                                    <option value="MD5">MD5</option>
+                                    <option value="SHA">SHA</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action Buttons -->
+                <div class="absolute bottom-8 right-8 left-8 pt-6 border-t border-color flex justify-between items-center">
+                    <button class="btn-secondary btn-danger-outline" id="btn-Settings-factory-reset">
+                        <i class="fas fa-trash-alt mr-1"></i> Factory Reset
+                    </button>
+                    <div class="flex gap-3 items-center">
+                        <span id="Settings-Save-Status" class="text-xs text-muted" style="display: none;"><i class="fas fa-check text-success mr-1"></i> Tersave</span>
+                        <button class="btn-secondary" id="btn-Settings-test-smtp" style="display: none;">
+                            <i class="fas fa-paper-plane"></i> Test SMTP
+                        </button>
+
+                        <button class="btn-secondary" id="btn-Settings-reset-tab">
+                            Cancelkan
+                        </button>
+                        <button class="btn-primary" id="btn-Settings-Save">
+                            Save Pereditan
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* Toggle switch styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,0.1);
+  transition: .3s;
+  border-radius: 24px;
+  border: 1px solid var(--border-color);
+}
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-muted);
+  transition: .3s;
+  border-radius: 50%;
+}
+.toggle-switch input:checked + .slider {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: white;
+}
+</style>

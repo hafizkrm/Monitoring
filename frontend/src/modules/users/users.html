@@ -1,0 +1,153 @@
+<div class="content-section" id="view-User" style="display: none;">
+    <!-- PAGE HEADER -->
+    <div class="mon-page-header inline-util-28">
+        <div class="inline-util-29">
+            <div class="page-header-icon blue">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <h2 class="inline-util-30">Manajemen User</h2>
+                <span class="inline-util-31">Kelola akun, tingkat role (Role), dan hak akses user sistem monitoring.</span>
+            </div>
+        </div>
+
+        <div class="flex gap-3 items-center">
+            <div class="usr-search">
+                <i class="fas fa-search"></i>
+                <input type="search" id="search-User" placeholder="Cari nama atau username..." aria-label="Cari user" autocomplete="off">
+            </div>
+            <button type="button" id="btn-add-user" class="btn-primary usr-btn-add" data-action="open-add">
+                <i class="fas fa-user-plus"></i> Tambah User
+            </button>
+        </div>
+    </div>
+
+    <!-- TOP SUMMARY STAT CARDS -->
+    <div id="User-summary-cards" class="usr-stats">
+        <div class="usr-stat usr-stat--neutral">
+            <div class="usr-stat__icon"><i class="fas fa-user"></i></div>
+            <div class="usr-stat__body">
+                <span class="usr-stat__label">Total User</span>
+                <span id="stat-User-total" class="usr-stat__value">0 Akun</span>
+            </div>
+        </div>
+
+        <div class="usr-stat usr-stat--purple">
+            <div class="usr-stat__icon"><i class="fas fa-user-shield"></i></div>
+            <div class="usr-stat__body">
+                <span class="usr-stat__label">Administrator</span>
+                <span id="stat-User-admin" class="usr-stat__value">0 Admin</span>
+            </div>
+        </div>
+
+        <div class="usr-stat usr-stat--green">
+            <div class="usr-stat__icon"><i class="fas fa-eye"></i></div>
+            <div class="usr-stat__body">
+                <span class="usr-stat__label">Viewer / Operator</span>
+                <span id="stat-User-viewer" class="usr-stat__value">0 User</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA TABLE CARD -->
+    <div class="card usr-card">
+        <div class="usr-table-wrap">
+            <table class="data-table usr-table">
+                <thead>
+                    <tr>
+                        <th scope="col">USER</th>
+                        <th scope="col">PERAN AKSES</th>
+                        <th scope="col">PASSWORD</th>
+                        <th scope="col" class="is-right">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody id="User-table-body">
+                    <tr>
+                        <td colspan="4" class="usr-table__empty">
+                            <i class="fas fa-circle-notch fa-spin mr-2"></i> Memuat data user...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Tambah User Modal -->
+<div class="modal-overlay modal-overlay-bg usr-modal" id="add-User-modal" role="dialog" aria-modal="true" aria-labelledby="add-User-title">
+    <div class="usr-modal__box">
+        <div class="usr-modal__header">
+            <h2 id="add-User-title" class="usr-modal__title"><i class="fas fa-user-plus"></i>Tambah User Baru</h2>
+            <button type="button" data-action="close-modal" aria-label="Close modal" class="usr-modal__close"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="add-User-form" novalidate>
+            <div class="usr-field">
+                <label for="User-name" class="usr-label">Nama Lengkap</label>
+                <input type="text" id="User-name" required placeholder="Contoh: Budi Santoso" class="usr-input">
+            </div>
+            <div class="usr-field">
+                <label for="User-Username" class="usr-label">Username</label>
+                <input type="text" id="User-Username" required placeholder="Contoh: budi" class="usr-input" autocomplete="username">
+            </div>
+            <div class="usr-field">
+                <label for="User-Password" class="usr-label">Password</label>
+                <div class="usr-pwd-wrap">
+                    <input type="password" id="User-Password" required minlength="6" placeholder="Min 6 karakter" autocomplete="new-password" class="usr-input">
+                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="User-Password" aria-label="Tampilkan password"><i class="far fa-eye"></i></button>
+                </div>
+            </div>
+            <div class="usr-field usr-field--last">
+                <label for="User-Role" class="usr-label">Role Akses</label>
+                <select id="User-Role" required class="usr-input" aria-label="User-Role">
+                    <option value="" disabled selected>Pilih Role</option>
+                    <option value="admin">Administrator (Akses Penuh)</option>
+                    <option value="view">Viewer (Hanya Lihat)</option>
+                </select>
+            </div>
+            <div class="usr-modal__footer">
+                <button type="button" data-action="close-modal" class="usr-btn-cancel">Cancel</button>
+                <button type="submit" class="usr-btn-submit">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay modal-overlay-bg usr-modal" id="Edit-User-modal" role="dialog" aria-modal="true" aria-labelledby="Edit-User-title">
+    <div class="usr-modal__box">
+        <div class="usr-modal__header">
+            <h2 id="Edit-User-title" class="usr-modal__title"><i class="fas fa-edit"></i>Edit User</h2>
+            <button type="button" data-action="close-modal" aria-label="Close modal" class="usr-modal__close"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="Edit-User-form" novalidate>
+            <input type="hidden" id="Edit-User-id">
+            <div class="usr-field">
+                <label for="Edit-User-name" class="usr-label">Nama Lengkap</label>
+                <input type="text" id="Edit-User-name" required placeholder="Contoh: Budi Santoso" class="usr-input">
+            </div>
+            <div class="usr-field">
+                <label for="Edit-User-Username" class="usr-label">Username</label>
+                <input type="text" id="Edit-User-Username" required placeholder="Contoh: budi" class="usr-input" autocomplete="username">
+            </div>
+            <div class="usr-field">
+                <label for="Edit-User-Password" class="usr-label">Password Baru (Opsional)</label>
+                <div class="usr-pwd-wrap">
+                    <input type="password" id="Edit-User-Password" placeholder="Kosongkan jika tidak ingin mengubah" autocomplete="new-password" class="usr-input">
+                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="Edit-User-Password" aria-label="Tampilkan password"><i class="far fa-eye"></i></button>
+                </div>
+            </div>
+            <div class="usr-field usr-field--last">
+                <label for="Edit-User-Role" class="usr-label">Role Akses</label>
+                <select id="Edit-User-Role" required class="usr-input" aria-label="Edit-User-Role">
+                    <option value="" disabled selected>Pilih Role</option>
+                    <option value="admin">Administrator (Akses Penuh)</option>
+                    <option value="view">Viewer (Hanya Lihat)</option>
+                </select>
+            </div>
+            <div class="usr-modal__footer">
+                <button type="button" data-action="close-modal" class="usr-btn-cancel">Cancel</button>
+                <button type="submit" class="usr-btn-submit">Update</button>
+            </div>
+        </form>
+    </div>
+</div>

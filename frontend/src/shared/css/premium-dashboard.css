@@ -1,0 +1,558 @@
+/* RADICAL PREMIUM DASHBOARD UI UPGRADES */
+
+/* Global Smoothness */
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+/* Hide Scrollbar completely for 24h monitor NOC */
+::-webkit-scrollbar {
+    display: none;
+}
+* {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Dynamic Animated Background for Main Content */
+.main-content {
+    background: radial-gradient(circle at 50% 0%, rgba(13, 17, 28, 1) 0%, rgba(5, 7, 12, 1) 100%) !important;
+    position: relative;
+    z-index: 1;
+    color: var(--text-main, #f8fafc);
+}
+
+/* Stunning Glassmorphism Cards */
+.card, .stat-card, .footer-stat {
+    background: linear-gradient(145deg, rgba(20, 25, 40, 0.7), rgba(10, 15, 25, 0.9)) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    position: relative;
+    overflow: hidden;
+    color: var(--text-main, #f8fafc);
+}
+
+/* High Contrast Text Rule for Dark Mode (Default) */
+:root:not([data-theme="light"]) .card,
+:root:not([data-theme="light"]) .stat-card,
+:root:not([data-theme="light"]) .footer-stat,
+:root:not([data-theme="light"]) .noc-card {
+    color: #f8fafc !important;
+}
+
+:root:not([data-theme="light"]) .inline-util-1,
+:root:not([data-theme="light"]) .inline-util-3,
+:root:not([data-theme="light"]) .inline-util-12,
+:root:not([data-theme="light"]) .inline-util-16,
+:root:not([data-theme="light"]) .inline-util-17,
+:root:not([data-theme="light"]) .inline-util-31,
+:root:not([data-theme="light"]) .inline-util-37 {
+    color: #cbd5e1 !important;
+}
+
+:root:not([data-theme="light"]) .inline-util-5,
+:root:not([data-theme="light"]) .inline-util-10,
+:root:not([data-theme="light"]) .inline-util-30 {
+    color: #ffffff !important;
+}
+
+/* Light Theme Adaptations for Premium Dashboard */
+:root[data-theme="light"] .main-content {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+:root[data-theme="light"] .card, 
+:root[data-theme="light"] .stat-card, 
+:root[data-theme="light"] .footer-stat,
+:root[data-theme="light"] .noc-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    color: #0f172a !important;
+}
+
+:root[data-theme="light"] .card:hover, 
+:root[data-theme="light"] .stat-card:hover {
+    background: #f8fafc !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1) !important;
+}
+
+:root[data-theme="light"] .card-header,
+:root[data-theme="light"] .card > h2 {
+    color: #1e293b !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .stat-label {
+    color: #64748b !important;
+}
+
+:root[data-theme="light"] .table-noc thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+}
+
+:root[data-theme="light"] .table-noc tbody tr {
+    border-bottom: 1px solid #f1f5f9 !important;
+}
+
+:root[data-theme="light"] .table-noc tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+:root[data-theme="light"] .inline-util-1,
+:root[data-theme="light"] .inline-util-3,
+:root[data-theme="light"] .inline-util-12,
+:root[data-theme="light"] .inline-util-16,
+:root[data-theme="light"] .inline-util-17,
+:root[data-theme="light"] .inline-util-31,
+:root[data-theme="light"] .inline-util-37 {
+    color: #64748b !important;
+}
+
+:root[data-theme="light"] .inline-util-5,
+:root[data-theme="light"] .inline-util-10,
+:root[data-theme="light"] .inline-util-30 {
+    color: #0f172a !important;
+}
+
+/* Neon Glow on Hover */
+.card:hover, .stat-card:hover {
+    background: linear-gradient(145deg, rgba(25, 30, 50, 0.8), rgba(15, 20, 35, 0.95)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    transform: translateY(-4px);
+}
+
+/* Accent Lines at the top of cards */
+.card::before, .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent);
+    opacity: 0.5;
+}
+
+.card:hover::before, .stat-card:hover::before {
+    opacity: 1;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 1), rgba(16, 185, 129, 1), transparent);
+}
+
+/* Massive & Bold Typography for Stats */
+.stat-value {
+    font-size: clamp(22px, 1vw + 12px, 34px) !important;
+    font-weight: 800 !important;
+    background: linear-gradient(to right, #ffffff, #94a3b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    letter-spacing: -1px;
+}
+
+.stat-label {
+    font-size: clamp(11px, 0.35vw + 7px, 14px) !important;
+    letter-spacing: 1.5px !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase;
+}
+
+/* Stat Icons Glow & Proportional Sizing */
+.stat-icon, .stat-card > div:first-child {
+    width: clamp(38px, 0.8vw + 24px, 48px) !important;
+    height: clamp(38px, 0.8vw + 24px, 48px) !important;
+    border-radius: 10px !important;
+    font-size: clamp(1rem, 0.4vw + 0.8rem, 1.35rem) !important;
+    box-shadow: 0 0 12px currentColor !important;
+    transform: none !important;
+    margin-right: 10px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Card Headers */
+.card-header, .card > h2, .card-title {
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 6px !important;
+    display: flex;
+    align-items: center;
+}
+
+/* Status dots animation */
+.status-dot {
+    position: relative;
+}
+.status-dot::after {
+    content: '';
+    position: absolute;
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    opacity: 0.8;
+}
+
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+/* Cisco Switch Enhancements */
+.cisco-switch {
+    background: linear-gradient(to bottom, #111827, #000000) !important;
+    border: 2px solid #374151 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.05) !important;
+}
+
+.led-blink {
+    animation: blinker 0.8s ease-in-out infinite alternate;
+    box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e !important;
+}
+
+@keyframes blinker {
+    0% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0.4; transform: scale(0.9); }
+}
+
+/* Table Enhancements */
+.table-noc thead th {
+    font-size: clamp(10.5px, 0.35vw + 7px, 14px) !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.5px;
+    color: #93c5fd !important;
+    background: #111827 !important;
+    padding: clamp(6px, 0.3vw + 4px, 10px) clamp(8px, 0.4vw + 4px, 12px) !important;
+    box-sizing: border-box !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+.table-noc tbody tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.02) !important;
+}
+.table-noc tbody td {
+    font-size: clamp(11.5px, 0.35vw + 7.5px, 14.5px) !important;
+    padding: clamp(6px, 0.3vw + 4px, 12px) clamp(8px, 0.4vw + 4px, 12px) !important;
+}
+.table-noc tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    transform: scale(1.01);
+    z-index: 10;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Pill badges for filters */
+.filter-pill {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 20px !important;
+    padding: clamp(3px, 0.2vw + 2px, 6px) clamp(8px, 0.3vw + 6px, 14px) !important;
+    font-size: clamp(10px, 0.25vw + 7.5px, 13px) !important;
+    font-weight: 600 !important;
+    color: #cbd5e1 !important;
+    transition: all 0.3s ease !important;
+}
+.filter-pill:hover, .filter-pill.active {
+    background: var(--accent-blue) !important;
+    color: #fff !important;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4) !important;
+    border-color: var(--accent-blue) !important;
+}
+
+/* Custom Modern Select to match dark background */
+.modern-select {
+    background-color: #1a2035 !important;
+    color-scheme: dark !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+    border-radius: 6px !important;
+    outline: none !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modern-select:hover, .modern-select:focus {
+    background-color: #252d4a !important;
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+.modern-select option {
+    background-color: #0f172a;
+    color: #cbd5e1;
+}
+
+/* Pagination Fix - Display sideways */
+.logs-pagination {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 8px !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    margin-top: 16px;
+}
+
+.logs-pagination .page-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-size: 13px !important;
+}
+
+.logs-pagination .page-btn:hover:not([disabled]) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.logs-pagination .page-btn.active {
+    background: var(--accent-blue, #3b82f6) !important;
+    color: #fff !important;
+    border-color: var(--accent-blue, #3b82f6) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4) !important;
+    font-weight: 600 !important;
+}
+
+.logs-pagination .page-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+}
+
+.logs-pagination .page-dots {
+    color: #94a3b8 !important;
+    padding: 0 4px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Device Type Distribution Enhancements */
+.dist-legend-item {
+    cursor: default;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dist-legend-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    transform: translateX(4px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Premium Standardized List Row for Dashboard Widgets */
+.premium-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.premium-list-index { width: 14px; font-size: clamp(10.5px, 0.3vw + 7px, 13px); color: var(--text-muted); text-align: right; flex-shrink: 0; }
+.premium-list-body { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.premium-list-header { display: flex; justify-content: space-between; align-items: center; }
+.premium-list-title { font-weight: 600; font-size: clamp(11px, 0.35vw + 7px, 14.5px); color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; flex: 1; min-width: 0; margin-right: 6px; }
+.premium-list-value { font-size: clamp(11px, 0.35vw + 7px, 14.5px); flex-shrink: 0; text-align: right; }
+.premium-progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+.premium-progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.premium-list-box { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 4px; border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s, transform 0.2s, box-shadow 0.2s; }
+.premium-list-box:hover { background: rgba(255,255,255,0.05); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+/* Premium List Box Elements */
+.premium-box-icon { width: clamp(22px, 0.6vw + 16px, 28px); height: clamp(22px, 0.6vw + 16px, 28px); border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: clamp(10px, 0.3vw + 7px, 13px); }
+.premium-box-details { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.premium-box-title { font-weight: 600; font-size: clamp(11px, 0.35vw + 7px, 14.5px); color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; line-height: 1.3; }
+.premium-box-subtitle { font-size: clamp(9.5px, 0.25vw + 7px, 12px); color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; line-height: 1.3; }
+.premium-box-action { font-size: clamp(10px, 0.3vw + 7px, 13px); font-weight: 600; flex-shrink: 0; text-align: right; padding: 2px 8px; border-radius: 4px; }
+
+/* Premium Sidebar & Badges */
+.premium-sidebar-badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: #fff; }
+.premium-sidebar-badge.purple { background: var(--accent-purple); }
+.premium-sidebar-badge.red { background: var(--accent-red); border-radius: 10px; font-size: 10px; }
+
+/* Premium Buttons */
+.premium-btn-danger { margin-top: 24px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 600; padding: 10px 14px; border-radius: 8px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s ease; }
+.premium-btn-danger:hover { background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+.premium-btn-danger i { color: #ef4444; }
+
+/* Responsive Zoom-Out & Wide Viewport Scaling Rules */
+@media (min-width: 1550px) {
+    .grid-top-stats { gap: 14px !important; }
+    .grid-noc { gap: 10px !important; }
+    .stat-card { padding: 14px !important; }
+}
+
+@media (min-width: 1920px) {
+    .grid-top-stats { gap: 16px !important; }
+    .grid-noc { gap: 12px !important; }
+    .stat-card { padding: 16px !important; }
+    .stat-icon {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 1.25rem !important;
+    }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   DEFAULT FULL-SCREEN NOC DASHBOARD AUTO-FIT ENGINE (No Zoom Required)
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* 1. Main Content Layout Tightening */
+.main-content {
+    padding: 8px 12px !important;
+    overflow: hidden !important;
+}
+
+.top-navbar.top-navbar-custom {
+    padding-bottom: 4px !important;
+    margin-bottom: 6px !important;
+}
+
+#view-title {
+    font-size: 16px !important;
+}
+
+#view-subtitle, #view-creator {
+    font-size: 10px !important;
+}
+
+/* 2. Top Summary Stat Cards Tightening */
+.grid-top-stats {
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.grid-top-stats .stat-card {
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+}
+
+.grid-top-stats .stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 13px !important;
+    margin-right: 8px !important;
+    border-radius: 8px !important;
+}
+
+.grid-top-stats .inline-util-3 {
+    font-size: 9.5px !important;
+    letter-spacing: 0.5px !important;
+}
+
+.grid-top-stats .inline-util-5 {
+    font-size: 16px !important;
+}
+
+.grid-top-stats .inline-util-12 {
+    font-size: 10px !important;
+}
+
+/* 3. NOC Grid & Columns Sizing */
+.grid-noc {
+    gap: 6px !important;
+}
+
+.noc-col {
+    gap: 6px !important;
+}
+
+.noc-col .card {
+    padding: 6px 10px !important;
+    border-radius: 10px !important;
+}
+
+.noc-col .card-header {
+    padding-bottom: 4px !important;
+    margin-bottom: 4px !important;
+    font-size: 10.5px !important;
+}
+
+/* 4. Center Column Specific Sizing */
+.table-noc-wrapper {
+    min-height: 120px !important;
+    height: 135px !important;
+}
+
+.table-noc thead th {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+}
+
+.table-noc tbody td {
+    padding: 3px 6px !important;
+    font-size: 10.5px !important;
+}
+
+.filter-pill {
+    padding: 2px 6px !important;
+    font-size: 9.5px !important;
+    border-radius: 12px !important;
+}
+
+/* 5. Cisco Switch Panel Tightening */
+.cisco-switch {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
+}
+
+.cisco-switch-scroll-container {
+    gap: 8px !important;
+}
+
+/* 6. Device Distribution Chart Tightening */
+.dist-chart-wrapper {
+    width: 75px !important;
+    height: 75px !important;
+}
+
+.dist-chart-wrapper canvas {
+    width: 75px !important;
+    height: 75px !important;
+}
+
+.dist-total-num {
+    font-size: 14px !important;
+}
+
+.dist-legend-item {
+    padding: 2px 6px !important;
+}
+
+.dist-legend-label {
+    font-size: 10px !important;
+}
+
+.dist-legend-val {
+    font-size: 10px !important;
+}
+
+/* 7. Right Column Cards Sizing */
+#top-cpu-card, #top-bw-card, #top-interface-card {
+    min-height: 95px !important;
+}
+

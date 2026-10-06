@@ -1,0 +1,58 @@
+<div id="view-alerts" class="content-section inline-util-15" >
+
+            <!-- ── Page Header ── -->
+            <div class="mon-page-header inline-util-28" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div class="inline-util-29">
+                    <div class="page-header-icon orange">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div>
+                        <h2 style="font-family:'Inter',sans-serif;" class="inline-util-30">Alert &amp; Notifikasi</h2>
+                        <span style="font-family:'Inter',sans-serif;" class="inline-util-31">Pantau peringatan dan Status gangguan pada perangkat jaringan Anda</span>
+                    </div>
+                </div>
+                <!-- Summary Quick Stats -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 8px;">
+                        <i class="fas fa-bell" style="color: var(--accent-orange); font-size: 13px;"></i>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Total Alert:</span>
+                        <strong id="alert-summary-total" style="font-size: 13px; color: var(--text-main);">0</strong>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
+                        <i class="fas fa-exclamation-circle" style="color: var(--accent-red); font-size: 13px;"></i>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Kritis:</span>
+                        <strong id="alert-summary-critical" style="font-size: 13px; color: var(--accent-red);">0</strong>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px;">
+                        <i class="fas fa-exclamation-triangle" style="color: var(--accent-orange); font-size: 13px;"></i>
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Peringatan:</span>
+                        <strong id="alert-summary-warning" style="font-size: 13px; color: var(--accent-orange);">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Alert Card ── -->
+            <div class="card" style="padding:0; overflow:hidden;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:28px; height:28px; background:rgba(239,68,68,0.1); border-radius:7px; display:flex; align-items:center; justify-content:center; color:var(--accent-red); font-size:13px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h2 class="card-title" style="margin:0; font-family:'Inter',sans-serif;">Daftar Alert &amp; Peringatan</h2>
+                    </div>
+                    <div class="mon-filter-bar" id="alert-filter-bar" style="margin:0; gap:6px;">
+                        <button class="mon-filter-chip active" id="chip-alert-all" onclick="window.monFilterAlerts('Semua', this)">Semua</button>
+                        <button class="mon-filter-chip" id="chip-alert-critical" onclick="window.monFilterAlerts('Critical', this)">🔴 Critical</button>
+                        <button class="mon-filter-chip" id="chip-alert-warning" onclick="window.monFilterAlerts('Warning', this)">🟡 Warning</button>
+                    </div>
+                </div>
+                <div style="padding:16px;">
+                    <div class="mon-alert-grid" id="alerts-page-list">
+                        <!-- Populated dynamically -->
+                        <div class="mon-alert-empty">
+                            Memuat data alert...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

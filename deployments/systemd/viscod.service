@@ -1,0 +1,39 @@
+[Unit]
+Description=Viscod - Network Monitoring Agent
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=viscod
+Group=viscod
+WorkingDirectory=/opt/viscod
+
+ExecStart=/opt/viscod/bin/agent -config /etc/viscod/config.yaml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+
+# Standard output / error
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=viscod
+
+# Security
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=65535
+
+# Timeout
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Environment
+Environment="PATH=/opt/viscod/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+EnvironmentFile=-/etc/default/viscod
+
+[Install]
+WantedBy=multi-user.target

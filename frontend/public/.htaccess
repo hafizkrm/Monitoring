@@ -1,0 +1,14 @@
+﻿Options +FollowSymLinks
+RewriteEngine On
+
+# Set correct MIME types
+<IfModule mod_mime.c>
+    AddType text/css .css
+    AddType application/javascript .js text/javascript
+</IfModule>
+
+# Handle PHP files properly
+<IfModule mod_rewrite.c>
+    RewriteRule ^api/metrics$ /api/metrics [L]
+    RewriteRule ^api/(.*)$ ../api/$1.php [L]
+</IfModule>

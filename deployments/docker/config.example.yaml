@@ -1,0 +1,42 @@
+# Viscod - Network Monitoring Agent Configuration
+# Example configuration file
+# Copy this to config.yaml and adjust values for your environment
+
+app:
+  name: viscod
+  version: 1.0.0
+  log_level: INFO        # DEBUG, INFO, WARN, ERROR
+  port: 8080            # Health check endpoint port
+
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: "your_password_here"
+  database: monitoring
+  max_connections: 25
+  max_idle_connections: 5
+  max_open_connections: 25
+  connection_timeout: 10s
+
+snmp:
+  timeout: 5s           # Timeout per SNMP query
+  retries: 3            # Number of retries on failure
+  community: public     # SNMP community string
+  version: "2c"         # SNMP version: 1, 2c, 3
+  port: 161            # SNMP port
+
+polling:
+  default_interval: 60s        # Default polling interval
+  max_workers: 50              # Maximum concurrent workers
+  batch_insert_size: 100       # Records per batch insert
+  batch_insert_timeout: 10s    # Timeout for batch insert
+  health_check_interval: 30s   # Health check frequency
+
+logger:
+  level: INFO
+  format: json          # json or text
+  output_path: ./var/log/viscod.log
+  max_size: 100         # MB
+  max_backups: 5
+  max_age: 30           # Days

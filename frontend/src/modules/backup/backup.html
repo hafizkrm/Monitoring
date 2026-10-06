@@ -1,0 +1,133 @@
+<!-- backup.html -->
+<div class="content-section" id="view-backup" style="display: none; animation: fadeIn 0.3s;">
+    
+    <div class="mon-page-header inline-util-28">
+        <div class="inline-util-29">
+            <div class="page-header-icon purple">
+                <i class="fas fa-save"></i>
+            </div>
+            <div>
+                <h2 class="inline-util-30">Backup & Restore</h2>
+                <span class="inline-util-31">Cadangkan konfigurasi sistem dan pulihkan kembali dengan aman.</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        
+        <!-- EXPORT CARD -->
+        <div class="glass-panel" style="padding: 24px; border-radius: 12px; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(44, 117, 255, 0.1); display: flex; align-items: center; justify-content: center; color: var(--accent-blue);">
+                    <i class="fas fa-file-export" style="font-size: 18px;"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; color: var(--text-main); font-size: 16px;">Export Configuration</h2>
+                    <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 12px;">Unduh pengaturan sistem dan daftar user.</p>
+                </div>
+            </div>
+            
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; flex-grow: 1;">
+                Sistem akan membuat fail `.json` yang berisi konfigurasi SMTP, SNMP, Interval Polling, serta akun user lokal.
+            </p>
+
+            <button id="btn-backup-export" class="btn-primary" style="margin-top: 16px; width: 100%;">
+                <i class="fas fa-download"></i> Unduh File JSON
+            </button>
+        </div>
+
+        <!-- AUTO BACKUP CARD -->
+        <div class="glass-panel" style="padding: 24px; border-radius: 12px; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(255, 171, 0, 0.1); display: flex; align-items: center; justify-content: center; color: var(--accent-orange);">
+                        <i class="fas fa-clock" style="font-size: 18px;"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; color: var(--text-main); font-size: 16px;">Auto Backup</h2>
+                        <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 12px;">Pencadangan berkala secara otomatis.</p>
+                    </div>
+                </div>
+                <label for="backup-auto-enable" class="toggle-switch">
+                    <input type="checkbox" id="backup-auto-enable">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px;" id="backup-auto-options">
+                <div class="form-group">
+                    <label for="backup-auto-schedule" class="form-label">Frekuensi</label>
+                    <select id="backup-auto-schedule" class="form-control" aria-label="backup-auto-schedule">
+                        <option value="daily">Harian</option>
+                        <option value="weekly">Mingguan</option>
+                        <option value="monthly">Bulanan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="backup-location" class="form-label">Lokasi Save</label>
+                    <input type="text" id="backup-location" value="Lokal (Server)" class="form-control" disabled style="opacity: 0.6;">
+                </div>
+            </div>
+        </div>
+
+        <!-- IMPORT / RESTORE CARD -->
+        <div class="glass-panel" style="padding: 24px; border-radius: 12px; grid-column: 1 / -1;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(34, 197, 94, 0.1); display: flex; align-items: center; justify-content: center; color: var(--accent-green);">
+                    <i class="fas fa-upload" style="font-size: 18px;"></i>
+                </div>
+                <div>
+                    <h2 style="margin: 0; color: var(--text-main); font-size: 16px;">Restore System</h2>
+                    <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 12px;">Unggah file konfigurasi `.json` untuk memulihkan sistem.</p>
+                </div>
+            </div>
+
+            <!-- Upload Zone -->
+            <div id="backup-upload-zone" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(0,0,0,0.1); position: relative;">
+                <input type="file" id="backup-file-input" accept=".json" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity: 0; cursor: pointer;">
+                <i class="fas fa-file-import" style="font-size: 32px; color: var(--text-muted); margin-bottom: 16px;"></i>
+                <h4 style="margin: 0 0 8px 0; color: var(--text-main); font-size: 14px;">Pilih atau Tarik File `.json` ke sini</h4>
+                <p style="margin: 0; color: var(--text-muted); font-size: 12px;">File akan divalidasi sebelum di-*restore*.</p>
+            </div>
+
+            <!-- Preview Zone (Hidden initially) -->
+            <div id="backup-preview-zone" style="display: none; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-top: 16px; animation: fadeIn 0.3s;">
+                <h4 style="margin: 0 0 16px 0; color: var(--text-main); font-size: 14px; display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-search"></i> Preview Changes</span>
+                    <span id="backup-preview-filename" style="color: var(--accent-blue); font-weight: 500;">config.json</span>
+                </h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Time Export</span>
+                        <div id="backup-preview-date" style="font-size: 13px; color: var(--text-main); font-weight: 500;">-</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Dibuat Oleh</span>
+                        <div id="backup-preview-author" style="font-size: 13px; color: var(--text-main); font-weight: 500;">-</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Kategori Settings</span>
+                        <div id="backup-preview-categories" style="font-size: 13px; color: var(--accent-orange); font-weight: 600;">-</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Total Akun User</span>
+                        <div id="backup-preview-User" style="font-size: 13px; color: var(--accent-green); font-weight: 600;">-</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="btn-backup-Cancel" class="btn-secondary">
+                        Cancelkan
+                    </button>
+                    <button id="btn-backup-confirm" class="btn-primary" style="background: var(--accent-green);">
+                        <i class="fas fa-check"></i> Konfirmasi & Restore
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+

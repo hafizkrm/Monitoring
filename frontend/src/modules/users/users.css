@@ -1,0 +1,367 @@
+/* ==========================================================================
+   User Management Module
+   Extracted from inline styles in users.html / users.js so table rows render
+   with short class lists instead of repeated multi-hundred-byte style attrs.
+   ========================================================================== */
+
+/* ---------- Toolbar ---------- */
+.usr-search {
+    position: relative;
+    width: 280px;
+}
+.usr-search > i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    pointer-events: none;
+}
+.usr-search > input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px 8px 34px;
+    font-size: 12px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.usr-search > input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.usr-btn-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ---------- Summary cards ---------- */
+.usr-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.usr-stat {
+    --tone: var(--accent-blue);
+    --tone-rgb: 59, 130, 246;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.usr-stat:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--tone-rgb), 0.35);
+}
+.usr-stat--purple { --tone: var(--accent-purple); --tone-rgb: 139, 92, 246; }
+.usr-stat--green  { --tone: var(--accent-green);  --tone-rgb: 16, 185, 129; }
+
+.usr-stat__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(var(--tone-rgb), 0.15);
+    border: 1px solid rgba(var(--tone-rgb), 0.3);
+    color: var(--tone);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.usr-stat__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.usr-stat__label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.usr-stat__value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--tone);
+}
+.usr-stat--neutral .usr-stat__value { color: var(--text-main); }
+
+/* ---------- Table ---------- */
+.usr-card {
+    padding: 20px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+.usr-table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.usr-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.usr-table thead tr {
+    background: rgba(255, 255, 255, 0.02);
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.usr-table th,
+.usr-table td {
+    padding: 12px 16px;
+    text-align: left;
+}
+.usr-table .is-right { text-align: right; }
+.usr-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.15s ease;
+}
+.usr-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+.usr-table__empty {
+    text-align: center !important;
+    padding: 36px !important;
+    color: var(--text-muted);
+}
+
+/* User identity cell */
+.usr-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.usr-avatar {
+    --tone: var(--accent-blue);
+    --tone-rgb: 59, 130, 246;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(var(--tone-rgb), 0.2);
+    color: var(--tone);
+    border: 1px solid rgba(var(--tone-rgb), 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.usr-avatar--admin { --tone: var(--accent-purple); --tone-rgb: 139, 92, 246; }
+.usr-name {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 13px;
+}
+.usr-self-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+.usr-handle {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* Role badge */
+.usr-role {
+    --tone: var(--accent-green);
+    --tone-rgb: 16, 185, 129;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(var(--tone-rgb), 0.15);
+    color: var(--tone);
+    border: 1px solid rgba(var(--tone-rgb), 0.3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.usr-role--admin { --tone: var(--accent-purple); --tone-rgb: 139, 92, 246; }
+
+/* Masked password */
+.usr-pwd-mask {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: monospace;
+}
+
+/* Row actions */
+.usr-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.usr-action {
+    --tone: var(--accent-blue);
+    --tone-rgb: 59, 130, 246;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid rgba(var(--tone-rgb), 0.2);
+    background: rgba(var(--tone-rgb), 0.1);
+    color: var(--tone);
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+.usr-action:hover:not(:disabled) {
+    background: rgba(var(--tone-rgb), 0.22);
+}
+.usr-action:active:not(:disabled) { transform: scale(0.96); }
+.usr-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.usr-action--danger { --tone: var(--accent-red); --tone-rgb: 239, 68, 68; }
+
+/* ---------- Modals ---------- */
+.modal-overlay.usr-modal {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    animation: none;
+}
+.modal-overlay.usr-modal.is-open { display: flex; }
+.modal-overlay.usr-modal.is-visible { opacity: 1; }
+
+.usr-modal__box {
+    background: #111827;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+}
+.usr-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+.usr-modal__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+.usr-modal__title > i {
+    color: var(--accent-blue);
+    margin-right: 8px;
+}
+.usr-modal__close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+}
+.usr-modal__close:hover { color: var(--text-main); }
+
+.usr-field { margin-bottom: 16px; }
+.usr-field--last { margin-bottom: 24px; }
+.usr-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
+.usr-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.usr-input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+select.usr-input {
+    background-color: #0f172a;
+    color: #f8fafc;
+    color-scheme: dark;
+}
+select.usr-input option {
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+.usr-pwd-wrap { position: relative; }
+.usr-pwd-wrap > .usr-input { padding-right: 40px; }
+.usr-pwd-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.usr-pwd-toggle:hover { color: var(--text-main); }
+
+.usr-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+}
+.usr-btn-cancel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.usr-btn-cancel:hover { background: rgba(255, 255, 255, 0.1); }
+.usr-btn-submit {
+    background: var(--accent-blue);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.usr-btn-submit:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
