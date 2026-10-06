@@ -1,0 +1,53 @@
+name: Phase 1 Verification CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: nms_verification_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Install dependencies (Docker & MySQL Client)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-mysql-client docker-compose
+
+    - name: Run Phase 1 Verification Suite
+      run: |
+        chmod +x verification/run_phase1_verification.sh
+        # Run the full script
+        bash verification/run_phase1_verification.sh
+
+    - name: Upload Evidence Artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: verification-evidence
+        path: verification/evidence/
