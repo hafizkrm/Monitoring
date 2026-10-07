@@ -6,18 +6,21 @@
                 <i class="fas fa-user"></i>
             </div>
             <div>
-                <h2 class="inline-util-30">Manajemen User</h2>
-                <span class="inline-util-31">Kelola akun, tingkat role (Role), dan hak akses user sistem monitoring.</span>
+                <h2 class="inline-util-30">User Management</h2>
+                <span class="inline-util-31">Manage user accounts, roles, and access permissions for the NMS system.</span>
             </div>
         </div>
 
         <div class="flex gap-3 items-center">
-            <div class="usr-search">
+            <div class="usr-search" style="position: relative;">
                 <i class="fas fa-search"></i>
-                <input type="search" id="search-User" placeholder="Cari nama atau username..." aria-label="Cari user" autocomplete="off">
+                <input type="text" id="search-User" placeholder="Search name or username..." aria-label="Search user" autocomplete="off" style="padding-right: 32px;" oninput="const btn = document.getElementById('clear-search-users'); if(btn){ btn.style.display = this.value ? 'flex' : 'none'; }">
+                <button type="button" id="clear-search-users" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #94a3b8; border-radius: 50%; width: 18px; height: 18px; padding: 0; margin: 0; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 9px; outline: none; z-index: 5; transition: all 0.2s ease;" title="Clear search" aria-label="Clear Search" onclick="const input = document.getElementById('search-User'); if(input){ input.value=''; input.dispatchEvent(new Event('input')); this.style.display='none'; input.focus(); }" onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.color='#ef4444';" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='#94a3b8';">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <button type="button" id="btn-add-user" class="btn-primary usr-btn-add" data-action="open-add">
-                <i class="fas fa-user-plus"></i> Tambah User
+                <i class="fas fa-user-plus"></i> Add User
             </button>
         </div>
     </div>
@@ -27,16 +30,16 @@
         <div class="usr-stat usr-stat--neutral">
             <div class="usr-stat__icon"><i class="fas fa-user"></i></div>
             <div class="usr-stat__body">
-                <span class="usr-stat__label">Total User</span>
-                <span id="stat-User-total" class="usr-stat__value">0 Akun</span>
+                <span class="usr-stat__label">Total Users</span>
+                <span id="stat-User-total" class="usr-stat__value">0 Accounts</span>
             </div>
         </div>
 
         <div class="usr-stat usr-stat--purple">
             <div class="usr-stat__icon"><i class="fas fa-user-shield"></i></div>
             <div class="usr-stat__body">
-                <span class="usr-stat__label">Administrator</span>
-                <span id="stat-User-admin" class="usr-stat__value">0 Admin</span>
+                <span class="usr-stat__label">Administrators</span>
+                <span id="stat-User-admin" class="usr-stat__value">0 Admins</span>
             </div>
         </div>
 
@@ -44,7 +47,7 @@
             <div class="usr-stat__icon"><i class="fas fa-eye"></i></div>
             <div class="usr-stat__body">
                 <span class="usr-stat__label">Viewer / Operator</span>
-                <span id="stat-User-viewer" class="usr-stat__value">0 User</span>
+                <span id="stat-User-viewer" class="usr-stat__value">0 Users</span>
             </div>
         </div>
     </div>
@@ -56,15 +59,15 @@
                 <thead>
                     <tr>
                         <th scope="col">USER</th>
-                        <th scope="col">PERAN AKSES</th>
+                        <th scope="col">ROLE &amp; ACCESS</th>
                         <th scope="col">PASSWORD</th>
-                        <th scope="col" class="is-right">ACTION</th>
+                        <th scope="col" class="is-right">ACTIONS</th>
                     </tr>
                 </thead>
                 <tbody id="User-table-body">
                     <tr>
                         <td colspan="4" class="usr-table__empty">
-                            <i class="fas fa-circle-notch fa-spin mr-2"></i> Memuat data user...
+                            <i class="fas fa-circle-notch fa-spin mr-2"></i> Loading user data...
                         </td>
                     </tr>
                 </tbody>
@@ -73,35 +76,35 @@
     </div>
 </div>
 
-<!-- Tambah User Modal -->
+<!-- Add User Modal -->
 <div class="modal-overlay modal-overlay-bg usr-modal" id="add-User-modal" role="dialog" aria-modal="true" aria-labelledby="add-User-title">
     <div class="usr-modal__box">
         <div class="usr-modal__header">
-            <h2 id="add-User-title" class="usr-modal__title"><i class="fas fa-user-plus"></i>Tambah User Baru</h2>
+            <h2 id="add-User-title" class="usr-modal__title"><i class="fas fa-user-plus"></i>Add New User</h2>
             <button type="button" data-action="close-modal" aria-label="Close modal" class="usr-modal__close"><i class="fas fa-times"></i></button>
         </div>
         <form id="add-User-form" novalidate>
             <div class="usr-field">
-                <label for="User-name" class="usr-label">Nama Lengkap</label>
-                <input type="text" id="User-name" required placeholder="Contoh: Budi Santoso" class="usr-input">
+                <label for="User-name" class="usr-label">Full Name</label>
+                <input type="text" id="User-name" required placeholder="e.g. John Doe" class="usr-input">
             </div>
             <div class="usr-field">
                 <label for="User-Username" class="usr-label">Username</label>
-                <input type="text" id="User-Username" required placeholder="Contoh: budi" class="usr-input" autocomplete="username">
+                <input type="text" id="User-Username" required placeholder="e.g. johndoe" class="usr-input" autocomplete="username">
             </div>
             <div class="usr-field">
                 <label for="User-Password" class="usr-label">Password</label>
                 <div class="usr-pwd-wrap">
-                    <input type="password" id="User-Password" required minlength="6" placeholder="Min 6 karakter" autocomplete="new-password" class="usr-input">
-                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="User-Password" aria-label="Tampilkan password"><i class="far fa-eye"></i></button>
+                    <input type="password" id="User-Password" required minlength="6" placeholder="Min 6 characters" autocomplete="new-password" class="usr-input">
+                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="User-Password" aria-label="Toggle password visibility"><i class="far fa-eye"></i></button>
                 </div>
             </div>
             <div class="usr-field usr-field--last">
-                <label for="User-Role" class="usr-label">Role Akses</label>
+                <label for="User-Role" class="usr-label">Access Role</label>
                 <select id="User-Role" required class="usr-input" aria-label="User-Role">
-                    <option value="" disabled selected>Pilih Role</option>
-                    <option value="admin">Administrator (Akses Penuh)</option>
-                    <option value="view">Viewer (Hanya Lihat)</option>
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="admin">Administrator (Full Access)</option>
+                    <option value="view">Viewer (Read Only)</option>
                 </select>
             </div>
             <div class="usr-modal__footer">
@@ -122,26 +125,26 @@
         <form id="Edit-User-form" novalidate>
             <input type="hidden" id="Edit-User-id">
             <div class="usr-field">
-                <label for="Edit-User-name" class="usr-label">Nama Lengkap</label>
-                <input type="text" id="Edit-User-name" required placeholder="Contoh: Budi Santoso" class="usr-input">
+                <label for="Edit-User-name" class="usr-label">Full Name</label>
+                <input type="text" id="Edit-User-name" required placeholder="e.g. John Doe" class="usr-input">
             </div>
             <div class="usr-field">
                 <label for="Edit-User-Username" class="usr-label">Username</label>
-                <input type="text" id="Edit-User-Username" required placeholder="Contoh: budi" class="usr-input" autocomplete="username">
+                <input type="text" id="Edit-User-Username" required placeholder="e.g. johndoe" class="usr-input" autocomplete="username">
             </div>
             <div class="usr-field">
-                <label for="Edit-User-Password" class="usr-label">Password Baru (Opsional)</label>
+                <label for="Edit-User-Password" class="usr-label">New Password (Optional)</label>
                 <div class="usr-pwd-wrap">
-                    <input type="password" id="Edit-User-Password" placeholder="Kosongkan jika tidak ingin mengubah" autocomplete="new-password" class="usr-input">
-                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="Edit-User-Password" aria-label="Tampilkan password"><i class="far fa-eye"></i></button>
+                    <input type="password" id="Edit-User-Password" placeholder="Leave blank to keep current password" autocomplete="new-password" class="usr-input">
+                    <button type="button" class="usr-pwd-toggle" data-action="toggle-pwd" data-target="Edit-User-Password" aria-label="Toggle password visibility"><i class="far fa-eye"></i></button>
                 </div>
             </div>
             <div class="usr-field usr-field--last">
-                <label for="Edit-User-Role" class="usr-label">Role Akses</label>
+                <label for="Edit-User-Role" class="usr-label">Access Role</label>
                 <select id="Edit-User-Role" required class="usr-input" aria-label="Edit-User-Role">
-                    <option value="" disabled selected>Pilih Role</option>
-                    <option value="admin">Administrator (Akses Penuh)</option>
-                    <option value="view">Viewer (Hanya Lihat)</option>
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="admin">Administrator (Full Access)</option>
+                    <option value="view">Viewer (Read Only)</option>
                 </select>
             </div>
             <div class="usr-modal__footer">

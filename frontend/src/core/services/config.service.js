@@ -124,7 +124,7 @@ export async function SaveConfig(category, data) {
     });
     
     if (!res.ok) {
-        throw new Error('Gagal menyimpan konfigurasi ke server');
+        throw new Error('Failed to save configuration to server');
     }
     return true;
 }
@@ -169,7 +169,7 @@ export async function exportConfig() {
             schemaVersion: CONFIG_SCHEMA_VERSION,
             appVersion: "1.0.0",
             exportedAt: new Date().toISOString(),
-            createdBy: "Administrator" // Mock metadata
+            createdBy: "Administrator"
         },
         payload: {
             Settings: currentConfig,

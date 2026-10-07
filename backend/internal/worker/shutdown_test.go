@@ -32,7 +32,6 @@ func TestGracefulShutdown(t *testing.T) {
 		},
 	}
 
-
 	mockDB := &MockDatabase{
 		GetAllEnabledDevicesFunc: func(ctx context.Context) ([]models.Device, error) {
 			return []models.Device{
@@ -51,7 +50,7 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 
 	wm := NewManager(cfg, mockDB, &MockLogger{}, mockRegistry, &MockRuleCache{})
-	
+
 	// Simulate active WebSocket broadcast stream
 	wsMessages := 0
 	wm.SetEventPublisher(&mockEventPublisher{
@@ -61,7 +60,7 @@ func TestGracefulShutdown(t *testing.T) {
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	managerFinished := make(chan bool)
 	go func() {
 		wm.Start(ctx)
@@ -69,11 +68,11 @@ func TestGracefulShutdown(t *testing.T) {
 	}()
 
 	time.Sleep(500 * time.Millisecond) // Let it poll for 500ms
-	
+
 	t.Logf("Initiating Graceful Shutdown. Broadcasted %d WS messages so far.", wsMessages)
-	
+
 	cancel() // Interrupt!
-	
+
 	select {
 	case <-managerFinished:
 		t.Log("Manager shutdown cleanly.")

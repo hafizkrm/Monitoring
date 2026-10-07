@@ -11,8 +11,8 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
 	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
-	"golang.org/x/time/rate"
 	"github.com/prometheus/prometheus/promql/parser"
+	"golang.org/x/time/rate"
 )
 
 // TSDBDeviceHistoryHandler returns per-device metrics history from Prometheus.
@@ -28,7 +28,7 @@ func TSDBDeviceHistoryHandler(db *database.Database, tsdbURL string) http.Handle
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "device_id parameter required"})
 			return
 		}
-		
+
 		devID, err := strconv.Atoi(deviceIDStr)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -75,7 +75,7 @@ func TSDBDeviceHistoryHandler(db *database.Database, tsdbURL string) http.Handle
 // Query params: query (required) - the PromQL query string.
 func TSDBQueryHandler(tsdbURL string, cfg config.PromQLConfig) http.HandlerFunc {
 	tsdbClient := tsdb.NewPrometheusClient(tsdbURL)
-	
+
 	// Create rate limiter
 	limit := rate.Every(cfg.RateLimitWindow / time.Duration(cfg.RateLimitRequests))
 	limiter := rate.NewLimiter(limit, cfg.RateLimitRequests)

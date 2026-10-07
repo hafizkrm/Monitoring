@@ -86,4 +86,3 @@ func main() {
 	fmt.Println("   Untuk metrik CPU dan RAM, Anda bisa memantaunya via Task Manager (Windows) atau 'top' (Linux) saat agent berjalan.")
 	fmt.Println("==================================================")
 }
-

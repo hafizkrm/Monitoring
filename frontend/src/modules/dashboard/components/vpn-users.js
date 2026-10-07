@@ -32,8 +32,22 @@ export async function updateVPNUser() {
                 const users = (data.users || data.User || []).slice(0, 5);
                 
                 if (users.length === 0) {
-                    container.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 8px; color:var(--text-muted); gap:6px;"><i class="fas fa-user-shield" style="font-size:18px; color:var(--accent-blue); opacity:0.75;"></i><span style="font-size:11px; font-weight:500;">Tidak ada sesi OpenVPN aktif</span></div>';
+                    container.style.display = 'flex';
+                    container.style.flexDirection = 'column';
+                    container.style.justifyContent = 'center';
+                    container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; width:100%; min-height:100px; padding:18px 12px; text-align:center; background:rgba(59, 130, 246, 0.05); border:1px solid rgba(59, 130, 246, 0.18); border-radius:10px; box-sizing:border-box;">
+                        <div style="position:relative; display:flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(59, 130, 246, 0.12); border-radius:50%; margin-bottom:8px; box-shadow:0 0 12px rgba(59, 130, 246, 0.25);">
+                            <i class="fas fa-shield-halved" style="font-size:16px; color:#60a5fa;"></i>
+                        </div>
+                        <span style="font-size:12px; font-weight:700; color:#60a5fa; letter-spacing:0.4px;">NO ACTIVE SESSIONS</span>
+                        <span style="font-size:10.5px; color:#94a3b8; margin-top:3px;">All OpenVPN user channels are idle</span>
+                    </div>`;
                     return;
+                } else {
+                    container.style.display = '';
+                    container.style.flexDirection = '';
+                    container.style.justifyContent = '';
                 }
 
                 const newHTML = users.map((user, index) => {
@@ -58,21 +72,42 @@ export async function updateVPNUser() {
                 
                 safeSetHTML(container, newHTML);
             } else {
-                container.innerHTML = '<div style="font-size:12px; color:var(--accent-red); text-align:center; padding:20px;">' + (data.error || 'Gagal memuat data') + '</div>';
+                setContainerCentered(container);
+                safeSetHTML(container, renderVPNError(data.error || 'Failed to load VPN sessions'));
             }
         } else {
-            let errorMsg = 'Gagal terhubung ke API (status: ' + res.status + ')';
+            let errorMsg = 'Gateway API unreachable (Status: ' + res.status + ')';
             try {
                 const errData = await res.json();
                 if (errData && errData.error) {
                     errorMsg = errData.error;
                 }
-            } catch (e) {
-                // Ignore JSON parse errors for non-JSON responses
-            }
-            container.innerHTML = '<div style="font-size:12px; color:var(--accent-red); text-align:center; padding:20px;">' + errorMsg + '</div>';
+            } catch (e) { }
+            setContainerCentered(container);
+            safeSetHTML(container, renderVPNError(errorMsg));
         }
     } catch (err) {
-        container.innerHTML = '<div style="font-size:12px; color:var(--accent-red); text-align:center; padding:20px;">Gagal mengambil data VPN (Network Error)</div>';
+        setContainerCentered(container);
+        safeSetHTML(container, renderVPNError('Network error connecting to Gateway API'));
     }
+}
+
+function setContainerCentered(container) {
+    if (container) {
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.justifyContent = 'center';
+    }
+}
+
+function renderVPNError(msg) {
+    return `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; width:100%; min-height:100px; padding:18px 12px; text-align:center; background:rgba(239, 68, 68, 0.05); border:1px solid rgba(239, 68, 68, 0.18); border-radius:10px; box-sizing:border-box;">
+        <div style="position:relative; display:flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(239, 68, 68, 0.12); border-radius:50%; margin-bottom:8px; box-shadow:0 0 12px rgba(239, 68, 68, 0.25);">
+            <i class="fas fa-plug-circle-xmark" style="font-size:16px; color:#f87171;"></i>
+        </div>
+        <span style="font-size:12px; font-weight:700; color:#f87171; letter-spacing:0.4px;">MIKROTIK GATEWAY OFFLINE</span>
+        <span style="font-size:10.5px; color:#94a3b8; margin-top:3px;" title="${msg}">API (10.10.60.2:8728) unreachable</span>
+    </div>
+    `;
 }

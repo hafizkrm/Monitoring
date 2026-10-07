@@ -130,7 +130,7 @@ func (r *AsyncMetricsRepo) BatchInsertDeviceMetrics(ctx context.Context, metrics
 		return errors.New("async metric repo is closed")
 	}
 
-	// For simplicity in the async queue, we just enqueue them one by one, 
+	// For simplicity in the async queue, we just enqueue them one by one,
 	// they will be batched again inside the worker.
 	for _, m := range metrics {
 		select {

@@ -5,7 +5,7 @@ const API_ENDPOINTS = {
     METRICS_HISTORY: '/api/metrics/history',
     INVENTORY: '/api/inventory',
     DEVICES: '/api/devices',
-    DEVICES_HAPUS: '/api/devices/delete',
+    DEVICES_DELETE: '/api/devices/delete',
     DEVICES_UPDATE: '/api/devices/update',
     RELIABILITY: '/api/reliability',
     INTERFACES: '/api/interfaces',
@@ -117,7 +117,7 @@ export async function connectDevice(ip, name, type) {
 
 // Delete device
 export async function DeleteDevice(ip) {
-    return await fetch(API_ENDPOINTS.DEVICES_HAPUS, {
+    return await fetch(API_ENDPOINTS.DEVICES_DELETE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ip })

@@ -60,7 +60,7 @@ func TestStartCleanupTask_ErrorMetrics(t *testing.T) {
 
 	cfg := config.Config{
 		Polling: config.PollingConfig{
-			CleanupInterval:      "10ms", // Fast for testing
+			CleanupInterval: "10ms", // Fast for testing
 		},
 	}
 

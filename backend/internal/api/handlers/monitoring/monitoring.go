@@ -139,7 +139,7 @@ func BandwidthHistoryHandler(db *database.Database, tsdbURL string) http.Handler
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		
+
 		durationStr := r.URL.Query().Get("duration")
 		if durationStr == "" {
 			durationStr = "30m"
@@ -159,7 +159,7 @@ func BandwidthHistoryHandler(db *database.Database, tsdbURL string) http.Handler
 				return
 			}
 		}
-		
+
 		_ = json.NewEncoder(w).Encode(history)
 	}
 }

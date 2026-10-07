@@ -81,18 +81,18 @@ func TestM5_EventBusLoad(t *testing.T) {
 					fmt.Sprintf("dev-%d", pubID),
 					"test-payload",
 				)
-				
+
 				pubStart := time.Now()
 				bus.Publish(evt)
 				latency := time.Since(pubStart).Microseconds()
-				
+
 				atomic.AddInt64(&pubLatencyTotal, latency)
 				atomic.AddInt64(&pubLatencyCount, 1)
 				atomic.AddInt64(&publishedCount, 1)
 
 				// simulate slight varied polling interval
 				if e%10 == 0 {
-					time.Sleep(1 * time.Millisecond) 
+					time.Sleep(1 * time.Millisecond)
 				}
 			}
 		}(p)
@@ -139,7 +139,7 @@ func TestM5_EventBusLoad(t *testing.T) {
 	fmt.Printf("Test Duration (Publishing): %v\n", publishDuration)
 	fmt.Printf("Throughput: %.2f events/sec\n", float64(publishedCount)/publishDuration.Seconds())
 	fmt.Printf("Average Publish Latency: %.4f ms\n", avgPubLatency)
-	
+
 	fmt.Printf("Fast Subscribers: %d\n", numFastSubscribers)
 	fmt.Printf("  Delivered: %d\n", deliveredFastCount)
 	fmt.Printf("  Dropped (Atomic): %d\n", fastDroppedAtomic)
@@ -147,7 +147,7 @@ func TestM5_EventBusLoad(t *testing.T) {
 	fmt.Printf("Slow Subscribers: %d\n", numSlowSubscribers)
 	fmt.Printf("  Delivered: %d\n", deliveredSlowCount)
 	fmt.Printf("  Dropped (Atomic): %d\n", slowDroppedAtomic)
-	
+
 	fmt.Printf("Goroutines Start: %d | End: %d\n", startGoroutines, endGoroutines)
 	fmt.Printf("Mem Alloc Start: %d KB | End: %d KB\n", startMem.Alloc/1024, endMem.Alloc/1024)
 	fmt.Printf("---------------------------------------\n")

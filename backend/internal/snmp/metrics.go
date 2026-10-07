@@ -1261,7 +1261,7 @@ func (c *Client) collectInterfaceMetrics(ctx context.Context, device models.Devi
 
 		aliasStr := strings.TrimSpace(c.parseString(aliases[index]))
 		descrStr := strings.TrimSpace(c.parseString(descrs[index]))
-		
+
 		if aliasStr == "" && descrStr != "" && descrStr != name {
 			aliasStr = descrStr
 		}

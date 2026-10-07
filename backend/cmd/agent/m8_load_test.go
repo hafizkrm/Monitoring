@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
 	"github.com/hafizkrm/Monitoring/backend/internal/transport/eventbus"
-	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
-	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -36,10 +35,6 @@ func TestM8_TSDBExporterIntegration(t *testing.T) {
 		pprof.Lookup("block").WriteTo(fBlock, 0)
 		fBlock.Close()
 	}()
-
-	// M7: Initialize TSDB Exporter
-	exporter := tsdb.NewTSDBExporter(bus)
-	go exporter.Start()
 
 	// Parameters (Simulate 150 devices bursts)
 	numPublishers := 150
@@ -161,5 +156,3 @@ func TestM8_TSDBExporterIntegration(t *testing.T) {
 	fmt.Printf("Mem Alloc Start: %d KB | End: %d KB\n", startMem.Alloc/1024, endMem.Alloc/1024)
 	fmt.Printf("--------------------------------------------------\n")
 }
-
-

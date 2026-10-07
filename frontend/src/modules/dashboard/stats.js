@@ -87,6 +87,12 @@ export function updateDashboardStats(metrics) {
     offlineCount = Math.max(0, total - onlineCount - disabledCount);
 
     if (getEl('stat-total-devices')) getEl('stat-total-devices').innerText = total;
+    if (getEl('sidebar-device-badge')) {
+        const devBadge = getEl('sidebar-device-badge');
+        devBadge.innerText = total;
+        devBadge.style.display = total > 0 ? 'inline-flex' : 'none';
+        devBadge.title = `${onlineCount} Online / ${total} Total`;
+    }
     if (getEl('stat-online')) getEl('stat-online').innerText = onlineCount;
     if (getEl('stat-offline')) getEl('stat-offline').innerText = offlineCount;
 
@@ -133,10 +139,10 @@ export function updateDashboardStats(metrics) {
     if (getEl('stat-bandwidth-upload')) {
         getEl('stat-bandwidth-upload').innerText = formatBwStr(totalTx);
     }
-    // Tampilkan info perangkat yang dieksklusi agar User tahu
+    // Display excluded devices note in English
     const radioBadgeEl = getEl('stat-bandwidth-note');
     if (radioBadgeEl && excludedCount > 0) {
-        const noteText = `*${excludedCount} Perangkat non-Router tidak digabung (Mencegah Double Counting)`;
+        const noteText = `*${excludedCount} non-router devices excluded (prevents double counting)`;
         radioBadgeEl.innerText = noteText;
         radioBadgeEl.title = noteText;
         radioBadgeEl.style.display = 'block';

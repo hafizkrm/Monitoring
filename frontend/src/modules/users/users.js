@@ -44,7 +44,7 @@ export async function refreshUsers() {
         state.users = Array.isArray(data.data) ? data.data : [];
     } catch (e) {
         console.error('Failed to fetch users', e);
-        window.showToast?.(`Gagal memuat data user: ${e.message}`, 'error');
+        window.showToast?.(`Failed to load user data: ${e.message}`, 'error');
         state.users = [];
     }
     render();
@@ -116,13 +116,13 @@ function rowTemplate(u, isSelf) {
             </div>
         </td>
         <td>${roleBadge}</td>
-        <td><span class="usr-pwd-mask" title="Password tersimpan dalam bentuk hash">********</span></td>
+        <td><span class="usr-pwd-mask" title="Password stored as hash">********</span></td>
         <td class="is-right">
             <div class="usr-actions">
                 <button type="button" class="usr-action" data-action="edit" data-id="${u.id}" aria-label="Edit ${username}">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button type="button" class="usr-action usr-action--danger" data-action="delete" data-id="${u.id}" aria-label="Hapus ${username}"${isSelf ? ' disabled title="Tidak dapat menghapus akun sendiri"' : ''}>
+                <button type="button" class="usr-action usr-action--danger" data-action="delete" data-id="${u.id}" aria-label="Delete ${username}"${isSelf ? ' disabled title="Cannot delete your own account"' : ''}>
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
@@ -215,7 +215,7 @@ function togglePasswordVisibility(btn) {
 function openEditModal(id) {
     const user = state.users.find((u) => u.id === id);
     if (!user) {
-        window.showToast?.('User tidak ditemukan', 'error');
+        window.showToast?.('User not found', 'error');
         return;
     }
 
@@ -299,7 +299,7 @@ function onCreateSubmit(e) {
             closeModal($('add-User-modal'));
             refreshUsers();
         } catch (err) {
-            window.showToast?.(`Gagal menambahkan user: ${err.message}`, 'error');
+            window.showToast?.(`Failed to add user: ${err.message}`, 'error');
         }
     });
 }
@@ -332,7 +332,7 @@ function onEditSubmit(e) {
             closeModal($('Edit-User-modal'));
             refreshUsers();
         } catch (err) {
-            window.showToast?.(`Gagal memperbarui user: ${err.message}`, 'error');
+            window.showToast?.(`Failed to update user: ${err.message}`, 'error');
         }
     });
 }
@@ -356,6 +356,6 @@ async function deleteUser(id) {
         window.showToast?.('User berhasil dihapus', 'success');
         refreshUsers();
     } catch (err) {
-        window.showToast?.(`Gagal menghapus user: ${err.message}`, 'error');
+        window.showToast?.(`Failed to delete user: ${err.message}`, 'error');
     }
 }

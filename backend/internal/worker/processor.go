@@ -20,9 +20,11 @@ type Processor struct {
 	workerCount  int
 
 	// For thresholds
-	ruleCache      cache.ThresholdRuleCache
-	mu             sync.Mutex
-	latencyStrikes map[int]int
+	ruleCache       cache.ThresholdRuleCache
+	mu              sync.Mutex
+	triggerStrikes  map[string]int
+	recoveryStrikes map[string]int
+	incidentFired   map[string]bool
 }
 
 func NewProcessor(
@@ -35,14 +37,16 @@ func NewProcessor(
 ) *Processor {
 
 	return &Processor{
-		registry:       registry,
-		deviceRepo:     deviceRepo,
-		metricRepo:     metricRepo,
-		incidentRepo:   incidentRepo,
-		logger:         logger,
-		ruleCache:      ruleCache,
-		workerCount:    10,
-		latencyStrikes: make(map[int]int),
+		registry:        registry,
+		deviceRepo:      deviceRepo,
+		metricRepo:      metricRepo,
+		incidentRepo:    incidentRepo,
+		logger:          logger,
+		ruleCache:       ruleCache,
+		workerCount:     10,
+		triggerStrikes:  make(map[string]int),
+		recoveryStrikes: make(map[string]int),
+		incidentFired:   make(map[string]bool),
 	}
 }
 
@@ -72,7 +76,7 @@ func (p *Processor) validateMetrics(metrics *models.TelemetrySnapshot) error {
 	return nil
 }
 
-func (p *Processor) ProcessMetrics(ctx context.Context, metrics *models.TelemetrySnapshot) error {
+func (p *Processor) ProcessMetrics(ctx context.Context, device models.Device, metrics *models.TelemetrySnapshot) error {
 	if metrics == nil {
 		return errors.New("metrics cannot be nil")
 	}
@@ -98,7 +102,7 @@ func (p *Processor) ProcessMetrics(ctx context.Context, metrics *models.Telemetr
 	}
 
 	// 2. Evaluate thresholds and auto-recovery for offline incidents
-	p.evaluateThresholds(ctx, metrics.DeviceID, metrics)
+	p.evaluateThresholds(ctx, device, metrics)
 
 	if err := p.metricRepo.InsertDeviceMetric(
 		ctx,
@@ -157,7 +161,22 @@ func (p *Processor) ProcessMetrics(ctx context.Context, metrics *models.Telemetr
 	return nil
 }
 
-func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metrics *models.TelemetrySnapshot) {
+// ProcessOfflineEvent handles threshold logic for completely offline devices without writing dummy metrics to TSDB.
+func (p *Processor) ProcessOfflineEvent(ctx context.Context, device models.Device, overallStatus string) {
+	// The incoming ctx is often already timed out/exhausted by the failed SNMP/Ping collector.
+	// We MUST use a fresh context for database operations to ensure incidents can actually be created.
+	bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dummyMetrics := &models.TelemetrySnapshot{
+		DeviceID: device.ID,
+		Status:   overallStatus,
+	}
+	p.evaluateThresholds(bgCtx, device, dummyMetrics)
+}
+
+func (p *Processor) evaluateThresholds(ctx context.Context, device models.Device, metrics *models.TelemetrySnapshot) {
+	deviceID := device.ID
 	// P0-13: Database Query Explosion Fix
 	// Load all active incidents ONCE instead of query per interface/threshold
 	activeIncidents, err := p.incidentRepo.GetActiveIncidentsByDevice(ctx, deviceID)
@@ -167,59 +186,75 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 	}
 
 	// Helper function for incidents
-	handleIncident := func(condition bool, incType string, titleDown string, alertDown string) {
+	handleIncident := func(condition bool, incType string, titleDown string, alertDown string, severity string, reqTrigger int, reqRecovery int) {
+		incKey := fmt.Sprintf("%d_%s", deviceID, incType)
 		_, exists := activeIncidents[incType]
+
+		p.mu.Lock()
+		defer p.mu.Unlock()
+
 		if condition {
-			// Trigger incident if not exists
-			if !exists {
-				incID, _ := p.incidentRepo.CreateIncident(ctx, deviceID, incType, titleDown)
-				if incID > 0 {
-					p.incidentRepo.CreateAlert(ctx, incID, "warning", alertDown)
+			p.recoveryStrikes[incKey] = 0
+			p.triggerStrikes[incKey]++
+
+			if !exists && p.triggerStrikes[incKey] >= reqTrigger {
+				if !p.incidentFired[incKey] {
+					incID, _ := p.incidentRepo.CreateIncident(ctx, deviceID, incType, titleDown)
+					if incID > 0 {
+						p.incidentRepo.CreateAlert(ctx, incID, severity, alertDown)
+						activeIncidents[incType] = incID
+					}
+					p.incidentFired[incKey] = true
 				}
+			} else if exists {
+				// Sync state if already exists (e.g. agent restart)
+				p.incidentFired[incKey] = true
 			}
 		} else {
-			// Resolve incident if exists
+			p.triggerStrikes[incKey] = 0
+
 			if exists {
-				p.incidentRepo.ResolveIncident(ctx, deviceID, incType)
+				p.recoveryStrikes[incKey]++
+				if p.recoveryStrikes[incKey] >= reqRecovery {
+					p.incidentRepo.ResolveIncident(ctx, deviceID, incType)
+					p.incidentRepo.CreateAlert(ctx, activeIncidents[incType], "success", fmt.Sprintf("RECOVERED: %s is back to normal", titleDown))
+					delete(activeIncidents, incType)
+					p.recoveryStrikes[incKey] = 0
+					p.incidentFired[incKey] = false
+				}
+			} else if p.incidentFired[incKey] {
+				// Manually resolved by user. We still need recovery strikes to reset the state.
+				p.recoveryStrikes[incKey]++
+				if p.recoveryStrikes[incKey] >= reqRecovery {
+					p.recoveryStrikes[incKey] = 0
+					p.incidentFired[incKey] = false
+				}
 			}
 		}
 	}
 
-	// 1. Offline Recovery Check
+	// 1. Offline Recovery Check & Topology Awareness
 	isDeviceUp := metrics.Status == "up" || metrics.Status == "degraded"
-	_, isOffline := activeIncidents["offline"]
-
-	if isDeviceUp {
-		if isOffline {
-			p.incidentRepo.ResolveIncident(ctx, deviceID, "offline")
-		}
-	} else {
-		if !isOffline {
-			incID, _ := p.incidentRepo.CreateIncident(ctx, deviceID, "offline", "Perangkat terdeteksi terputus (Offline)")
-			if incID > 0 {
-				p.incidentRepo.CreateAlert(ctx, incID, "danger", "Perangkat terputus (Offline)")
+	isParentOffline := false
+	if device.ParentIP != "" {
+		importCache := cache.GetMetricsCache()
+		if parentMetrics := importCache.GetDeviceByIP(device.ParentIP); parentMetrics != nil {
+			if parentMetrics.Status == "down" || parentMetrics.Status == "offline" || parentMetrics.Status == "timeout" {
+				isParentOffline = true
 			}
 		}
-		// Also implicitly resolve SNMP degraded since offline supersedes it
-		if _, isDegraded := activeIncidents["snmp_degraded"]; isDegraded {
-			p.incidentRepo.ResolveIncident(ctx, deviceID, "snmp_degraded")
-		}
 	}
+
+	titleOffline := fmt.Sprintf("Device %s (%s) is offline", device.Name, device.IPAddress)
+	alertOffline := fmt.Sprintf("Device %s (%s) disconnected (Offline)", device.Name, device.IPAddress)
+
+	offlineCondition := !isDeviceUp && !isParentOffline
+	handleIncident(offlineCondition, "offline", titleOffline, alertOffline, "danger", 2, 3)
 
 	// 1.5 SNMP Degraded Check
-	switch metrics.Status {
-	case "degraded":
-		if _, isDegraded := activeIncidents["snmp_degraded"]; !isDegraded {
-			incID, _ := p.incidentRepo.CreateIncident(ctx, deviceID, "snmp_degraded", "Perangkat dapat di-ping tetapi SNMP gagal (Degraded)")
-			if incID > 0 {
-				p.incidentRepo.CreateAlert(ctx, incID, "warning", "Koneksi SNMP ke perangkat terganggu (Degraded)")
-			}
-		}
-	case "up":
-		if _, isDegraded := activeIncidents["snmp_degraded"]; isDegraded {
-			p.incidentRepo.ResolveIncident(ctx, deviceID, "snmp_degraded")
-		}
-	}
+	// If device is offline, it supersedes SNMP Degraded, so we force condition=false for degraded when offline.
+	isDegraded := metrics.Status == "degraded" && isDeviceUp
+	handleIncident(isDegraded, "snmp_degraded", fmt.Sprintf("Device %s (%s) is reachable via ping but SNMP failed (Degraded)", device.Name, device.IPAddress), fmt.Sprintf("SNMP connection to device %s (%s) disrupted (Degraded)", device.Name, device.IPAddress), "warning", 2, 2)
 
 	rules := p.ruleCache.GetRulesForDevice(deviceID)
 
@@ -233,8 +268,10 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 			handleIncident(
 				metrics.CPUUsage >= cpuRule.ThresholdValue,
 				"high_cpu",
-				fmt.Sprintf("Penggunaan CPU tinggi (%.1f%%)", metrics.CPUUsage),
-				fmt.Sprintf("Terdeteksi penggunaan CPU tinggi: %.1f%%", metrics.CPUUsage),
+				fmt.Sprintf("High CPU usage (%.1f%%) on %s", metrics.CPUUsage, device.Name),
+				fmt.Sprintf("High CPU usage detected: %.1f%% on %s (%s)", metrics.CPUUsage, device.Name, device.IPAddress),
+				"warning",
+				2, 3, // 2 strikes to trigger, 3 to recover
 			)
 		}
 	}
@@ -249,8 +286,10 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 			handleIncident(
 				metrics.MemoryUsage >= ramRule.ThresholdValue,
 				"high_ram",
-				fmt.Sprintf("Penggunaan Memori tinggi (%.1f%%)", metrics.MemoryUsage),
-				fmt.Sprintf("Terdeteksi penggunaan Memori tinggi: %.1f%%", metrics.MemoryUsage),
+				fmt.Sprintf("High memory usage (%.1f%%) on %s", metrics.MemoryUsage, device.Name),
+				fmt.Sprintf("High memory usage detected: %.1f%% on %s (%s)", metrics.MemoryUsage, device.Name, device.IPAddress),
+				"warning",
+				2, 3,
 			)
 		}
 	}
@@ -261,32 +300,24 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 		latRule = models.ThresholdRule{ThresholdValue: 80.0, StrikeCount: 2, IsActive: true}
 	}
 	if latRule.IsActive {
-		var strikeCount int
-		p.mu.Lock()
-		if metrics.LatencyMs >= int(latRule.ThresholdValue) {
-			p.latencyStrikes[deviceID]++
-			strikeCount = p.latencyStrikes[deviceID]
-		} else {
-			p.latencyStrikes[deviceID] = 0
-			strikeCount = 0
-		}
-		p.mu.Unlock()
-
 		handleIncident(
-			metrics.LatencyMs >= int(latRule.ThresholdValue) && strikeCount >= latRule.StrikeCount,
+			metrics.LatencyMs >= int(latRule.ThresholdValue),
 			"high_latency",
-			fmt.Sprintf("Latensi ping tinggi (%d ms)", metrics.LatencyMs),
-			fmt.Sprintf("Terdeteksi latensi ping tinggi: %d ms", metrics.LatencyMs),
+			fmt.Sprintf("High ping latency (%d ms) on %s", metrics.LatencyMs, device.Name),
+			fmt.Sprintf("High ping latency detected: %d ms on %s (%s)", metrics.LatencyMs, device.Name, device.IPAddress),
+			"warning",
+			latRule.StrikeCount, 3, // Use user-defined strike count for trigger
 		)
 	}
 
 	// 5. Packet Loss > 10% (Warning)
-	// (Keeping packet_loss hardcoded as it wasn't requested to be moved to dynamic rules)
 	handleIncident(
 		metrics.PacketLoss >= 10.0,
 		"packet_loss",
-		fmt.Sprintf("Kehilangan paket tinggi (%.1f%%)", metrics.PacketLoss),
-		fmt.Sprintf("Terdeteksi kehilangan paket: %.1f%%", metrics.PacketLoss),
+		fmt.Sprintf("High packet loss (%.1f%%) on %s (%s)", metrics.PacketLoss, device.Name, device.IPAddress),
+		fmt.Sprintf("Packet loss detected: %.1f%% on %s (%s)", metrics.PacketLoss, device.Name, device.IPAddress),
+		"warning",
+		2, 3,
 	)
 
 	// 6. Interface down checks (Batch checked in memory)
@@ -298,8 +329,10 @@ func (p *Processor) evaluateThresholds(ctx context.Context, deviceID int, metric
 		handleIncident(
 			iface.Status == "down",
 			incType,
-			"Antarmuka "+iface.InterfaceName+" terputus",
-			"Antarmuka "+iface.InterfaceName+" terputus (Down)",
+			fmt.Sprintf("Interface %s is down on %s", iface.InterfaceName, device.Name),
+			fmt.Sprintf("Interface %s disconnected (Down) on %s (%s)", iface.InterfaceName, device.Name, device.IPAddress),
+			"warning",
+			2, 3,
 		)
 	}
 }

@@ -13,16 +13,16 @@ import (
 
 func TestUsersHandler_Logout(t *testing.T) {
 	handler := &UsersHandler{}
-	
+
 	req, _ := http.NewRequest("POST", "/api/logout", nil)
 	rr := httptest.NewRecorder()
-	
+
 	handler.Logout(rr, req)
-	
+
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
-	
+
 	// Check if cookie is cleared
 	cookies := rr.Result().Cookies()
 	var found bool
@@ -41,12 +41,12 @@ func TestUsersHandler_Logout(t *testing.T) {
 
 func TestUsersHandler_Refresh_Unauthorized(t *testing.T) {
 	handler := &UsersHandler{jwtSecret: "secret"}
-	
+
 	req, _ := http.NewRequest("POST", "/api/refresh", nil)
 	rr := httptest.NewRecorder()
-	
+
 	handler.Refresh(rr, req)
-	
+
 	if status := rr.Code; status != http.StatusUnauthorized {
 		t.Errorf("expected 401 Unauthorized for missing cookie, got %v", status)
 	}

@@ -175,7 +175,7 @@ function bindAction() {
 
             window.showToast?.('Settings berhasil disave', 'success');
         } catch (e) {
-            window.showToast?.(e.message || 'Gagal menyimpan pengaturan', 'error');
+            window.showToast?.(e.message || 'Failed to save settings', 'error');
         }
     };
 

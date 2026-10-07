@@ -151,8 +151,8 @@ function startTSDBStatusPoller() {
             badge.style.color = 'var(--accent-green)';
             icon.className = 'fas fa-database';
             icon.style.color = 'var(--accent-green)';
-            text.innerText = 'TSDB AKTIF';
-            badge.title = 'Prometheus Time-Series Database Terhubung';
+            text.innerText = 'TSDB ACTIVE';
+            badge.title = 'Prometheus Time-Series Database Connected';
         } else {
             badge.style.background = 'rgba(239, 68, 68, 0.12)';
             badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
@@ -160,7 +160,7 @@ function startTSDBStatusPoller() {
             icon.className = 'fas fa-exclamation-triangle';
             icon.style.color = 'var(--accent-red)';
             text.innerText = 'TSDB OFFLINE';
-            badge.title = 'Gagal Terhubung ke Prometheus TSDB (Fallback ke SQL)';
+            badge.title = 'Failed to Connect to Prometheus TSDB (Fallback to SQL)';
         }
     };
 

@@ -13,7 +13,7 @@ func TestEventBus_SinglePubSub(t *testing.T) {
 	defer bus.Shutdown()
 
 	sub := bus.Subscribe(contracts.DomainEventMetricsUpdated, 10)
-	
+
 	event := contracts.NewDomainEvent("test", contracts.DomainEventMetricsUpdated, "dev-1", "payload")
 	bus.Publish(event)
 
@@ -33,7 +33,7 @@ func TestEventBus_MultipleSubscribers(t *testing.T) {
 
 	sub1 := bus.Subscribe(contracts.DomainEventLogCreated, 10)
 	sub2 := bus.Subscribe(contracts.DomainEventLogCreated, 10)
-	
+
 	event := contracts.NewDomainEvent("test", contracts.DomainEventLogCreated, "dev-1", "payload")
 	bus.Publish(event)
 
@@ -93,7 +93,7 @@ func TestEventBus_Concurrent(t *testing.T) {
 	defer bus.Shutdown()
 
 	var wg sync.WaitGroup
-	
+
 	// Concurrent subscribers
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
@@ -128,13 +128,13 @@ func TestEventBus_ShutdownIdempotent(t *testing.T) {
 	if ok {
 		t.Fatal("Expected subscriber channel to be closed on shutdown")
 	}
-	
+
 	// Subscribing after shutdown should return nil or not panic
 	sub2 := bus.Subscribe(contracts.DomainEventMetricsUpdated, 10)
 	if sub2 != nil {
 		t.Fatal("Expected nil subscriber after shutdown")
 	}
-	
+
 	// Publishing after shutdown should not panic
 	bus.Publish(contracts.NewDomainEvent("test", contracts.DomainEventMetricsUpdated, "dev-1", "payload"))
 }

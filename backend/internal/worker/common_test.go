@@ -122,8 +122,8 @@ func (m *MockDatabase) InsertActivityLog(ctx context.Context, userId *int64, use
 
 // MockSNMP is a mock implementation of SNMPClient
 type MockSNMP struct {
-	CollectFunc func(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error)
-	GetNetworkStatsFunc      func(ctx context.Context, ip string) (int, float64, float64, error)
+	CollectFunc         func(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error)
+	GetNetworkStatsFunc func(ctx context.Context, ip string) (int, float64, float64, error)
 }
 
 func (m *MockSNMP) Collect(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error) {

@@ -85,7 +85,7 @@ func TestProcessor_ProcessMetrics(t *testing.T) {
 		CollectedAt: time.Now(),
 	}
 
-	err := p.ProcessMetrics(ctx, metrics)
+	err := p.ProcessMetrics(ctx, models.Device{ID: 1}, metrics)
 	if err != nil {
 		t.Fatalf("ProcessMetrics failed: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestProcessor_ProcessMetrics(t *testing.T) {
 func TestProcessor_EvaluateThresholds(t *testing.T) {
 	ctx := context.Background()
 	var createdIncidents []string
-	
+
 	mockDB := &MockDatabase{
 		CreateIncidentFunc: func(ctx context.Context, deviceID int, incidentType string, description string) (int64, error) {
 			createdIncidents = append(createdIncidents, incidentType)
@@ -114,7 +114,7 @@ func TestProcessor_EvaluateThresholds(t *testing.T) {
 			return nil
 		},
 	}
-	
+
 	mockRegistry := &MockRegistry{}
 	p := NewProcessor(mockRegistry, mockDB, mockDB, mockDB, &MockLogger{}, &MockRuleCache{})
 
@@ -128,9 +128,9 @@ func TestProcessor_EvaluateThresholds(t *testing.T) {
 			MemoryUsage: 90.0, // above 85
 			Status:      "up",
 		}
-		
-		p.evaluateThresholds(ctx, metrics.DeviceID, metrics)
-		
+
+		p.evaluateThresholds(ctx, models.Device{ID: metrics.DeviceID}, metrics)
+
 		if len(createdIncidents) != 2 {
 			t.Errorf("expected 2 incidents (cpu, ram), got %d: %v", len(createdIncidents), createdIncidents)
 		}
@@ -146,12 +146,11 @@ func TestProcessor_EvaluateThresholds(t *testing.T) {
 			MemoryUsage: 0.0,
 			Status:      "up",
 		}
-		
-		p.evaluateThresholds(ctx, metrics.DeviceID, metrics)
-		
+
+		p.evaluateThresholds(ctx, models.Device{ID: metrics.DeviceID}, metrics)
+
 		if len(createdIncidents) > 0 {
 			t.Errorf("expected 0 incidents for ICMP, got %d: %v", len(createdIncidents), createdIncidents)
 		}
 	})
 }
-

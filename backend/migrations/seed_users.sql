@@ -42,12 +42,12 @@ CREATE TABLE IF NOT EXISTS wireless_history (
 
 -- ============================================================
 -- Seed: Admin & Users
--- Password admin123 → $2a$10$cjxxXPOvishnHcQ.tm837ugUDfBaRjlsCf272V8Y/IneJ4cZWslSe
--- Password hafiz    → $2a$10$gmUm5kUnrVXm.9v5vBhZwe1y/V1KqE3.5j65wck65OaaHBt0RVyfy
+-- WARNING: Default credentials removed for security. 
+-- You MUST replace '__REPLACE_WITH_BCRYPT_HASH__' with a valid bcrypt hash before deployment!
 -- ============================================================
 INSERT IGNORE INTO users (name, username, password_hash, role) VALUES
-    ('Administrator', 'admin', '$2a$10$cjxxXPOvishnHcQ.tm837ugUDfBaRjlsCf272V8Y/IneJ4cZWslSe', 'admin'),
-    ('Hafiz', 'hafiz', '$2a$10$gmUm5kUnrVXm.9v5vBhZwe1y/V1KqE3.5j65wck65OaaHBt0RVyfy', 'admin');
+    ('Administrator', 'admin', '__REPLACE_WITH_BCRYPT_HASH__', 'admin'),
+    ('Hafiz', 'hafiz', '__REPLACE_WITH_BCRYPT_HASH__', 'admin');
 
 SELECT 'DONE! Tables created and users seeded.' AS result;
 SHOW TABLES;

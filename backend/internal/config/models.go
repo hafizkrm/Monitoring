@@ -250,15 +250,6 @@ func (c *Config) setDefaults() {
 		c.PromQL.RateLimitWindow = time.Minute
 	}
 
-	if c.Logger.Level == "" {
-		c.Logger.Level = "INFO"
-	}
-	if c.Logger.Format == "" {
-		c.Logger.Format = "json"
-	}
-	if c.Logger.OutputPath == "" {
-		c.Logger.OutputPath = "./var/log/nms-agent.log"
-	}
 	if c.Logger.MaxSize == 0 {
 		c.Logger.MaxSize = 100 // MB
 	}
@@ -349,4 +340,3 @@ func (c *Config) GetCleanupInterval() time.Duration {
 	d, _ := time.ParseDuration(c.Polling.CleanupInterval)
 	return d
 }
-

@@ -126,7 +126,7 @@ window.filterDeviceTable = function(type, btn) {
             btn.classList.add('active');
         }
     }
-    const filterValue = type === 'all' ? 'Semua' : type;
+    const filterValue = type === 'all' ? 'All' : type;
     if (typeof window.setDeviceFilter === 'function') {
         window.setDeviceFilter(filterValue);
     }

@@ -43,12 +43,12 @@ function initCommandPalette() {
     if (!modal || !input) return;
 
     const quickLinks = [
-        { title: 'Dashboard', type: 'Modul', icon: 'fa-th-large', view: 'dashboard' },
-        { title: 'Daftar Perangkat', type: 'Modul', icon: 'fa-network-wired', view: 'devices' },
-        { title: 'Reports Performa', type: 'Modul', icon: 'fa-chart-bar', view: 'Reports' },
-        { title: 'Settings Sistem', type: 'Modul', icon: 'fa-cog', view: 'Settings' },
-        { title: 'Manajemen User', type: 'Modul', icon: 'fa-user', view: 'User' },
-        { title: 'Activity Logs', type: 'Modul', icon: 'fa-history', view: 'logs' }
+        { title: 'Dashboard', type: 'Module', icon: 'fa-th-large', view: 'dashboard' },
+        { title: 'Device List', type: 'Module', icon: 'fa-network-wired', view: 'devices' },
+        { title: 'Performance Reports', type: 'Module', icon: 'fa-chart-bar', view: 'Reports' },
+        { title: 'System Settings', type: 'Module', icon: 'fa-cog', view: 'Settings' },
+        { title: 'User Management', type: 'Module', icon: 'fa-user', view: 'User' },
+        { title: 'Activity Logs', type: 'Module', icon: 'fa-history', view: 'logs' }
     ];
 
     function toggleModal(show) {
@@ -90,7 +90,7 @@ function initCommandPalette() {
         const filtered = quickLinks.filter(item => item.title.toLowerCase().includes(query) || item.type.toLowerCase().includes(query));
         
         if (filtered.length === 0) {
-            resultsContainer.innerHTML = '<div class="text-center p-4 text-muted text-sm">Tidak ditemukan hasil.</div>';
+            resultsContainer.innerHTML = '<div class="text-center p-4 text-muted text-sm">No results found.</div>';
             return;
         }
 

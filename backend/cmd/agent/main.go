@@ -25,13 +25,13 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/repository"
 	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
+
 	// New NMS Architecture Packages (Kept Websocket)
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/transport/eventbus"
 	nms_websocket "github.com/hafizkrm/Monitoring/backend/internal/transport/websocket"
-	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/devices"
 	"github.com/hafizkrm/Monitoring/backend/internal/api/handlers/incidents"
@@ -91,9 +91,6 @@ func main() {
 	}
 
 	// Initialize repositories / sync after migration is successful
-	if err := db.SyncOfflineAlerts(context.Background()); err != nil {
-		log.Error("Failed initial SyncOfflineAlerts", map[string]interface{}{"error": err})
-	}
 
 	log.Info("Connected to database", map[string]interface{}{
 		"database": cfg.Database.Database,
@@ -129,7 +126,6 @@ func main() {
 	// Initialize Chi Router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
 	corsOriginsStr := os.Getenv("CORS_ORIGINS")
@@ -176,9 +172,6 @@ func main() {
 		nms_websocket.ServeWS(wsHub, w, req)
 	})
 	log.Info("Sprint 1 Core Platform Initialized", nil)
-	// M7: Phase 3 TSDB Prometheus Exporter
-	tsdbExporter := tsdb.NewTSDBExporter(eBus)
-	go tsdbExporter.Start()
 
 	// ==========================================
 
@@ -231,6 +224,7 @@ func main() {
 			r.Get("/api/incidents", incidents.GetActiveIncidents(db))
 			r.Get("/api/alerts", incidents.GetAlerts(db))
 			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/read", incidents.MarkAlertRead(db))
+			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/read-all", incidents.MarkAllAlertsRead(db))
 			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/resolve-by-ip", incidents.ResolveAlertsByIP(db))
 
 			r.Get("/api/vpn/users", monitoring.VPNUsersHandler(cfg))
@@ -308,6 +302,8 @@ func main() {
 	// Start VPN Logger polling
 	worker.StartVPNLogger(ctx, cfg, db, log)
 
+	// Background alert auto-recovery is now handled internally by processor.go via ProcessOfflineEvent
+
 	log.Info("Agent started successfully", map[string]interface{}{
 		"workers": cfg.Polling.MaxWorkers,
 	})
@@ -380,4 +376,3 @@ func staticHandler(h http.Handler) http.HandlerFunc {
 		h.ServeHTTP(gzw, r)
 	}
 }
-

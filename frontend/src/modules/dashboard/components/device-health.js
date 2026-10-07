@@ -60,7 +60,7 @@ function updateDeviceHealth(metrics) {
     const sorted = mapped.sort((a, b) => b.stressScore - a.stressScore).slice(0, 5);
 
     if (sorted.length === 0) {
-        container.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 8px; color:var(--text-muted); gap:6px;"><i class="fas fa-heartbeat" style="font-size:18px; color:var(--accent-green); opacity:0.8;"></i><span style="font-size:11px; font-weight:500;">Semua perangkat beroperasi normal</span></div>`;
+        container.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 8px; color:var(--text-muted); gap:6px;"><i class="fas fa-heartbeat" style="font-size:18px; color:var(--accent-green); opacity:0.8;"></i><span style="font-size:11px; font-weight:500;">All devices operating normally</span></div>`;
         return;
     }
 

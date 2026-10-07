@@ -6,10 +6,10 @@ services:
     container_name: nms-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: monitoring
-      MYSQL_USER: viscod
-      MYSQL_PASSWORD: viscodpassword
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-nms_db}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
 
@@ -23,12 +23,13 @@ services:
       - db
     environment:
       - DATABASE_HOST=db
-      - DATABASE_USER=viscod
-      - DATABASE_PASSWORD=viscodpassword
-      - DATABASE_NAME=monitoring
+      - DATABASE_USER=${DB_USER}
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - DATABASE_NAME=${DB_NAME:-nms_db}
     volumes:
       - ./config.yaml:/app/config.yaml
       - ./var/log:/app/var/log
+      - ../../frontend:/app/frontend
     ports:
       - "8080:8080"
 

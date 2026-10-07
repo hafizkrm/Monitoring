@@ -20,8 +20,8 @@ func TestScheduler_SyncAndDispatch(t *testing.T) {
 
 	now := time.Now()
 	devices := []models.Device{
-		{ID: 1, Name: "Device 1", PollingInterval: 60, LastPolledAt: nil}, // Due now
-		{ID: 2, Name: "Device 2", PollingInterval: 60, LastPolledAt: timePtr(now.Add(30 * time.Second))}, // Not due yet
+		{ID: 1, Name: "Device 1", PollingInterval: 60, LastPolledAt: nil},                                 // Due now
+		{ID: 2, Name: "Device 2", PollingInterval: 60, LastPolledAt: timePtr(now.Add(30 * time.Second))},  // Not due yet
 		{ID: 3, Name: "Device 3", PollingInterval: 60, LastPolledAt: timePtr(now.Add(-90 * time.Second))}, // Overdue (due now)
 	}
 

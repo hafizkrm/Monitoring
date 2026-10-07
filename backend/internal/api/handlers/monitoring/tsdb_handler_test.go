@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 )
 
@@ -15,7 +16,7 @@ func TestTSDBQueryHandler_Limits(t *testing.T) {
 	// Mock Prometheus Server
 	promServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query().Get("query")
-		
+
 		// Simulate a slow query
 		if strings.Contains(query, "slow") {
 			time.Sleep(6 * time.Second)
@@ -39,8 +40,6 @@ func TestTSDBQueryHandler_Limits(t *testing.T) {
 		RateLimitRequests: 2,
 		RateLimitWindow:   1 * time.Minute,
 	}
-
-
 
 	tests := []struct {
 		name       string
@@ -95,12 +94,12 @@ func TestTSDBQueryHandler_Limits(t *testing.T) {
 	// Because of rate limit, we need to reset the handler or just increase rate limit for the test.
 	// Actually, wait, RateLimitRequests is 2. The above test has 5 valid requests. It will hit rate limit!
 	// Let's create a new handler per test case so rate limiter is fresh.
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := TSDBQueryHandler(promServer.URL, cfg)
 			req := httptest.NewRequest("GET", "/api/tsdb/query?query="+tt.query, nil)
-			ctx := context.WithValue(req.Context(), "role", tt.role)
+			ctx := context.WithValue(req.Context(), middleware.UserRoleContextKey, tt.role)
 			req = req.WithContext(ctx)
 
 			rr := httptest.NewRecorder()
@@ -118,7 +117,7 @@ func TestTSDBQueryHandler_Limits(t *testing.T) {
 		// We allow 2 requests per minute
 		for i := 0; i < 2; i++ {
 			req := httptest.NewRequest("GET", "/api/tsdb/query?query=up", nil)
-			ctx := context.WithValue(req.Context(), "role", "admin")
+			ctx := context.WithValue(req.Context(), middleware.UserRoleContextKey, "admin")
 			req = req.WithContext(ctx)
 			rr := httptest.NewRecorder()
 			h.ServeHTTP(rr, req)
@@ -129,7 +128,7 @@ func TestTSDBQueryHandler_Limits(t *testing.T) {
 
 		// 3rd request should fail
 		req := httptest.NewRequest("GET", "/api/tsdb/query?query=up", nil)
-		ctx := context.WithValue(req.Context(), "role", "admin")
+		ctx := context.WithValue(req.Context(), middleware.UserRoleContextKey, "admin")
 		req = req.WithContext(ctx)
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, req)

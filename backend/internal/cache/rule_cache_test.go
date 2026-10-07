@@ -31,7 +31,6 @@ func (m *mockRuleRepo) DeleteRule(ctx context.Context, id int) error {
 	return nil
 }
 
-
 func TestThresholdRuleCache(t *testing.T) {
 	devID := 5
 	globalCPU := models.ThresholdRule{MetricName: "cpu", ThresholdValue: 80, IsActive: true}
@@ -49,7 +48,7 @@ func TestThresholdRuleCache(t *testing.T) {
 	}
 
 	rules := cache.GetRulesForDevice(devID)
-	
+
 	// Test inactive rule is still returned so processor can evaluate its IsActive flag
 	if rule, exists := rules["memory"]; !exists {
 		t.Error("expected inactive rule to exist in cache")

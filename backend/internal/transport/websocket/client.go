@@ -27,12 +27,12 @@ var upgrader = websocket.Upgrader{
 		if origin == "" {
 			return true
 		}
-		
+
 		u, err := url.Parse(origin)
 		if err != nil {
 			return false
 		}
-		
+
 		return u.Host == r.Host
 	},
 }
@@ -138,12 +138,12 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client := &Client{
-		hub:    hub, 
-		conn:   conn, 
+		hub:    hub,
+		conn:   conn,
 		send:   make(chan contracts.WSEventEnvelope, 256),
 		topics: make(map[string]bool),
 	}
-	
+
 	// Automatically subscribe to global topics if desired, e.g., "global"
 	client.topics["global"] = true
 

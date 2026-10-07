@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
@@ -55,10 +55,10 @@ func TestWSLoad200Devices(t *testing.T) {
 	// Simulate 200 devices sending deltas concurrently
 	t.Log("Simulating 200 concurrent devices...")
 	start := time.Now()
-	
+
 	deviceCount := 200
 	wg.Add(deviceCount)
-	
+
 	for i := 0; i < deviceCount; i++ {
 		go func(deviceID int) {
 			defer wg.Done()
@@ -67,14 +67,14 @@ func TestWSLoad200Devices(t *testing.T) {
 					Event: "device_metrics_delta",
 					Payload: map[string]interface{}{
 						"device_id": deviceID,
-						"cpu": 10 + j,
+						"cpu":       10 + j,
 					},
 				}
 				time.Sleep(10 * time.Millisecond) // Poll interval simulation
 			}
 		}(i)
 	}
-	
+
 	wg.Wait()
 	t.Logf("Broadcasting finished for 200 devices. Time: %v", time.Since(start))
 

@@ -94,7 +94,7 @@ export function renderPagination(targetId, totalItems, limit, currentPage, callb
     let html = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; padding: 12px 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 8px;">
             <div style="font-size: 13px; color: var(--text-muted, #94a3b8); font-weight: 500;">
-                Menampilkan <strong style="color: #60a5fa;">${startItem} - ${endItem}</strong> dari <strong style="color: #f8fafc;">${totalItems}</strong> perangkat (Halaman <strong style="color: #60a5fa;">${currentPage}</strong> dari <strong style="color: #f8fafc;">${totalPages}</strong>)
+                Showing <strong style="color: #60a5fa;">${startItem} - ${endItem}</strong> of <strong style="color: #f8fafc;">${totalItems}</strong> devices (Page <strong style="color: #60a5fa;">${currentPage}</strong> of <strong style="color: #f8fafc;">${totalPages}</strong>)
             </div>
             <div class="logs-pagination" style="display: flex !important; align-items: center !important; gap: 6px !important; margin: 0 !important; width: auto !important;">
     `;

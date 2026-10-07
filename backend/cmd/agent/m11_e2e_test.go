@@ -17,7 +17,6 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
 	"github.com/hafizkrm/Monitoring/backend/internal/transport/eventbus"
-	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
 )
 
@@ -38,7 +37,7 @@ func (m *mockLogger) Error(msg string, fields map[string]interface{}) {}
 func (m *mockLogger) Debug(msg string, fields map[string]interface{}) {}
 func (m *mockLogger) Warn(msg string, fields map[string]interface{})  {}
 func (m *mockLogger) Fatal(msg string, fields map[string]interface{}) {}
-func (m *mockLogger) Sync() error { return nil }
+func (m *mockLogger) Sync() error                                     { return nil }
 
 func setupE2EDB(t *testing.T) *database.Database {
 	rawDB, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/nms_verification_db?parseTime=true")
@@ -88,9 +87,6 @@ func TestM11_E2E_Phase3Exit(t *testing.T) {
 	bus := eventbus.NewInMemoryEventBus()
 	defer bus.Shutdown()
 
-	exporter := tsdb.NewTSDBExporter(bus)
-	go exporter.Start()
-
 	logger := &mockLogger{}
 
 	cfg := config.Config{
@@ -112,18 +108,18 @@ func TestM11_E2E_Phase3Exit(t *testing.T) {
 		defer wg.Done()
 		mgr.Start(ctx) // This will block until context is cancelled
 	}()
-	
+
 	metricPayload := cache.LatestDeviceMetrics{
-		DeviceID: 1,
-		Name: "Test Router",
-		DeviceType: "router",
-		Status: "online",
-		CPUUsage: 15.5,
+		DeviceID:    1,
+		Name:        "Test Router",
+		DeviceType:  "router",
+		Status:      "online",
+		CPUUsage:    15.5,
 		MemoryUsage: 2048.0,
-		Uptime: 3600,
+		Uptime:      3600,
 		CollectedAt: time.Now(),
 	}
-	
+
 	// Inject directly to database like the worker does when processing
 	_, err := db.ExecContext(ctx, "INSERT INTO device_metrics (device_id, collected_at, cpu_usage, memory_usage, uptime) VALUES (?, ?, ?, ?, ?)",
 		metricPayload.DeviceID, metricPayload.CollectedAt, metricPayload.CPUUsage, metricPayload.MemoryUsage, metricPayload.Uptime)
@@ -179,7 +175,7 @@ func TestM11_E2E_Phase3Exit(t *testing.T) {
 
 	for _, mf := range metrics {
 		name := mf.GetName()
-		
+
 		// Assert that the deprecated per-device gauges are entirely removed
 		switch name {
 		case "nms_device_cpu_usage_percent",
@@ -191,7 +187,7 @@ func TestM11_E2E_Phase3Exit(t *testing.T) {
 			"nms_device_status":
 			t.Errorf("CRITICAL: Deprecated metric %s is still exposed by exporter!", name)
 		}
-		
+
 		// If it's one of our NMS metrics, verify it has no dynamic identity labels
 		if strings.HasPrefix(name, "nms_") {
 			for _, m := range mf.GetMetric() {

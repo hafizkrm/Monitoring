@@ -73,7 +73,7 @@ func (cb *CircuitBreaker) GetFailures(deviceID int) int {
 func (cb *CircuitBreaker) GetBrokenCount() int {
 	cb.mu.RLock()
 	defer cb.mu.RUnlock()
-	
+
 	broken := 0
 	for _, count := range cb.failureCount {
 		if count >= cb.maxFailures {

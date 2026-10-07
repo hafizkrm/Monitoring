@@ -12,7 +12,7 @@ func TestDefaultCollectorRegistry(t *testing.T) {
 
 	t.Run("Register and Get", func(t *testing.T) {
 		registry.Register("snmp", mockCollector)
-		
+
 		c, err := registry.Get("snmp")
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)

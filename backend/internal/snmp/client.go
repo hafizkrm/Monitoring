@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ping/ping"
 	"github.com/gosnmp/gosnmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/logger"
+	probing "github.com/prometheus-community/pro-bing"
 )
 
 type Client struct {
@@ -259,7 +259,7 @@ func (c *Client) createGoSNMP(
 }
 
 func (c *Client) GetNetworkStats(ctx context.Context, ip string) (latency int, jitter float64, loss float64, err error) {
-	// On Windows, native go-ping often silently fails without Admin privileges and blocks for 2 seconds.
+	// On Windows, native pro-bing often silently fails without Admin privileges and blocks for 2 seconds.
 	// We use the OS ping directly to ensure reliability and speed.
 	if runtime.GOOS == "windows" {
 		if lat, ok := fallbackOSPing(ctx, ip); ok {
@@ -268,7 +268,7 @@ func (c *Client) GetNetworkStats(ctx context.Context, ip string) (latency int, j
 		return 0, 0, 100, fmt.Errorf("no reply from %s (OS Ping)", ip)
 	}
 
-	pinger, err := ping.NewPinger(ip)
+	pinger, err := probing.NewPinger(ip)
 	if err == nil {
 		pinger.Count = 3
 		pinger.Timeout = 2 * time.Second
@@ -436,7 +436,7 @@ func (c *Client) queryBulkWalk(ctx context.Context, client *gosnmp.GoSNMP, oid s
 			}
 		}
 	}
-	
+
 	// Check context again after walk finishes
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return ctxErr

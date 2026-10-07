@@ -9,7 +9,7 @@ import { initDeviceDetail, openDeviceSidebar } from './deviceDetail.js';
 
 const API_ENDPOINTS = {
     INVENTORY: '/api/inventory',
-    DEVICES_HAPUS: '/api/devices/delete',
+    DEVICES_DELETE: '/api/devices/delete',
     DEVICES_UPDATE: '/api/devices/update'
 };
 
@@ -60,29 +60,29 @@ function bindAddDeviceModal() {
 
             // Input Validation
             if (!name) {
-                showToast('Nama perangkat wajib diisi', 'warning');
+                showToast('Device name is required', 'warning');
                 return;
             }
             if (!category) {
-                showToast('Pilih kategori perangkat', 'warning');
+                showToast('Please select a device category', 'warning');
                 return;
             }
             if (!ip) {
-                showToast('IP Address wajib diisi', 'warning');
+                showToast('IP Address is required', 'warning');
                 return;
             }
 
             // IPv4 Format Validation
             const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
             if (!ipRegex.test(ip)) {
-                showToast('Format IP Address tidak valid! Contoh: 192.168.1.1', 'error');
+                showToast('Invalid IP Address format! Example: 192.168.1.1', 'error');
                 return;
             }
 
             // Lock Submit Button with Spinner
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             }
 
             try {
@@ -94,14 +94,14 @@ function bindAddDeviceModal() {
 
                 if (res.ok) {
                     const data = await res.json().catch(() => ({}));
-                    let msg = `Perangkat ${name} (${ip}) berhasil ditambahkan!`;
+                    let msg = `Device ${name} (${ip}) successfully added!`;
                     if (data.vendor && data.vendor !== 'Generic') {
-                        msg = `Perangkat ${name} (${ip}) terdeteksi sebagai vendor ${data.vendor} dan berhasil ditambahkan!`;
+                        msg = `Device ${name} (${ip}) detected as ${data.vendor} vendor and successfully added!`;
                     }
                     showToast(msg, 'success');
                     
                     // Reset filter, sorting & pagination so new device is immediately visible on top
-                    currentFilterType = 'Semua';
+                    currentFilterType = 'All';
                     currentSearchTerm = '';
                     currentSortCol = null;
                     updateSortIcons();
@@ -115,7 +115,7 @@ function bindAddDeviceModal() {
                     const filterBar = document.getElementById('mon-device-filter-bar');
                     if (filterBar) {
                         filterBar.querySelectorAll('.mon-filter-chip').forEach(b => {
-                            b.classList.toggle('active', b.innerText.trim() === 'Semua');
+                            b.classList.toggle('active', b.innerText.trim() === 'All');
                         });
                     }
 
@@ -123,11 +123,11 @@ function bindAddDeviceModal() {
                     fetchDevicesTable();
                 } else {
                     const errText = await res.text();
-                    showToast(`Gagal menambahkan: ${errText}`, 'error');
+                    showToast(`Failed to add device: ${errText}`, 'error');
                 }
             } catch (err) {
-                console.error('Tambah Perangkat Error:', err);
-                showToast('Error koneksi ke server', 'error');
+                console.error('Add Device Error:', err);
+                showToast('Server connection error', 'error');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -139,10 +139,50 @@ function bindAddDeviceModal() {
 }
 
 // Local state for filters & sorting
-let currentFilterType = 'Semua';
+let currentFilterType = 'All';
 let currentSearchTerm = '';
 let currentSortCol = null;
 let currentSortDir = 'asc';
+let currentStatusFilter = 'all'; // 'all', 'online', 'offline'
+
+function updateBadgeCardStyles() {
+    const totalCard = document.getElementById('badge-filter-total');
+    const onlineCard = document.getElementById('badge-filter-online');
+    const offlineCard = document.getElementById('badge-filter-offline');
+
+    [totalCard, onlineCard, offlineCard].forEach(card => {
+        if (!card) return;
+        card.style.transition = 'all 0.25s ease';
+        card.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+        card.style.boxShadow = 'none';
+    });
+
+    if (currentStatusFilter === 'online' && onlineCard) {
+        onlineCard.style.borderColor = '#22c55e';
+        onlineCard.style.boxShadow = '0 0 12px rgba(34, 197, 94, 0.35)';
+    } else if (currentStatusFilter === 'offline' && offlineCard) {
+        offlineCard.style.borderColor = '#ef4444';
+        offlineCard.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.35)';
+    } else if (currentStatusFilter === 'all' && totalCard) {
+        totalCard.style.borderColor = '#3b82f6';
+        totalCard.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.25)';
+    }
+}
+
+function resetCategoryFilterToAll() {
+    currentFilterType = 'All';
+    const filterBar = document.getElementById('mon-device-filter-bar');
+    if (filterBar) {
+        filterBar.querySelectorAll('.mon-filter-chip').forEach(chip => {
+            const text = chip.innerText || chip.textContent || '';
+            if (text.trim().startsWith('All')) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
+        });
+    }
+}
 
 // Setup event listeners for devices view
 function setupDeviceEventListeners() {
@@ -154,13 +194,23 @@ function setupDeviceEventListeners() {
         let debounceTimer;
         searchInput.addEventListener('input', (e) => {
             const val = e.target.value;
-            if (clearBtn) clearBtn.style.display = val.trim() ? 'block' : 'none';
+            if (clearBtn) clearBtn.style.display = val.trim() ? 'flex' : 'none';
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 currentSearchTerm = val;
                 state.pagination.devices.current = 1;
                 fetchDevicesTable();
             }, 300);
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                if (clearBtn) clearBtn.style.display = 'none';
+                currentSearchTerm = '';
+                state.pagination.devices.current = 1;
+                fetchDevicesTable();
+            }
         });
     }
 
@@ -172,27 +222,65 @@ function setupDeviceEventListeners() {
             state.pagination.devices.current = 1;
             fetchDevicesTable();
         });
+
+        clearBtn.addEventListener('mouseenter', () => {
+            clearBtn.style.background = 'rgba(239, 68, 68, 0.25)';
+            clearBtn.style.borderColor = '#ef4444';
+            clearBtn.style.color = '#f87171';
+            clearBtn.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.4)';
+            clearBtn.style.transform = 'translateY(-50%) scale(1.1)';
+        });
+        clearBtn.addEventListener('mouseleave', () => {
+            clearBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            clearBtn.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+            clearBtn.style.color = '#94a3b8';
+            clearBtn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+            clearBtn.style.transform = 'translateY(-50%) scale(1)';
+        });
     }
 
-    // Badge click listeners
-    const applyBadgeFilter = (filterText) => {
-        if (searchInput) {
-            searchInput.value = filterText;
-            if (clearBtn) clearBtn.style.display = filterText ? 'block' : 'none';
-            currentSearchTerm = filterText;
+    // Global Master Inventory Stat Badges
+    const badgeTotal = document.getElementById('badge-filter-total');
+    if (badgeTotal) {
+        badgeTotal.addEventListener('click', () => {
+            resetCategoryFilterToAll();
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
+            currentSearchTerm = '';
+            currentStatusFilter = 'all';
+            updateBadgeCardStyles();
             state.pagination.devices.current = 1;
             fetchDevicesTable();
-        }
-    };
-
-    const badgeTotal = document.getElementById('badge-filter-total');
-    if (badgeTotal) badgeTotal.addEventListener('click', () => applyBadgeFilter(''));
+        });
+    }
 
     const badgeOnline = document.getElementById('badge-filter-online');
-    if (badgeOnline) badgeOnline.addEventListener('click', () => applyBadgeFilter('Online'));
+    if (badgeOnline) {
+        badgeOnline.addEventListener('click', () => {
+            resetCategoryFilterToAll();
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
+            currentSearchTerm = '';
+            currentStatusFilter = currentStatusFilter === 'online' ? 'all' : 'online';
+            updateBadgeCardStyles();
+            state.pagination.devices.current = 1;
+            fetchDevicesTable();
+        });
+    }
 
     const badgeOffline = document.getElementById('badge-filter-offline');
-    if (badgeOffline) badgeOffline.addEventListener('click', () => applyBadgeFilter('Offline'));
+    if (badgeOffline) {
+        badgeOffline.addEventListener('click', () => {
+            resetCategoryFilterToAll();
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
+            currentSearchTerm = '';
+            currentStatusFilter = currentStatusFilter === 'offline' ? 'all' : 'offline';
+            updateBadgeCardStyles();
+            state.pagination.devices.current = 1;
+            fetchDevicesTable();
+        });
+    }
 }
 
 window.handleDeviceSort = function(colName) {
@@ -238,11 +326,11 @@ window.exportDevicesCSV = async function() {
         const devices = invResponse.data || [];
 
         if (devices.length === 0) {
-            showToast('Tidak ada data perangkat untuk diexport', 'warning');
+            showToast('No device data to export', 'warning');
             return;
         }
 
-        let csv = 'Nama Perangkat,Tipe,IP Address,Status,UpTime (detik)\n';
+        let csv = 'Device Name,Type,IP Address,Status,Uptime (seconds)\n';
         devices.forEach(d => {
             const m = Array.isArray(metrics) ? metrics.find(x => (x.ip_address || x.ip) === d.ip_address) : null;
             const status = m ? m.status : (d.status || 'UNKNOWN');
@@ -256,14 +344,14 @@ window.exportDevicesCSV = async function() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `inventory_perangkat_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `device_inventory_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        showToast('Berhasil mengunduh data CSV perangkat');
+        showToast('Device CSV data downloaded successfully');
     } catch (e) {
         console.error('CSV Export Error:', e);
-        showToast('Gagal mengunduh CSV', 'error');
+        showToast('Failed to download CSV', 'error');
     }
 };
 
@@ -276,6 +364,8 @@ window.monFilterTable = function(type, btn) {
         }
     }
     currentFilterType = type;
+    currentStatusFilter = 'all';
+    updateBadgeCardStyles();
     state.pagination.devices.current = 1;
     fetchDevicesTable();
 };
@@ -285,12 +375,16 @@ export async function fetchDevicesTable() {
     const tbody = document.getElementById('devices-module-table-body');
     if (!tbody) return;
 
+    if (window._pendingDeviceStatusFilter !== undefined) {
+        currentStatusFilter = window._pendingDeviceStatusFilter;
+        window._pendingDeviceStatusFilter = undefined;
+    }
     if (window._pendingDeviceSearch !== undefined) {
         currentSearchTerm = window._pendingDeviceSearch;
         const searchInput = document.getElementById('search-devices');
         if (searchInput) searchInput.value = currentSearchTerm;
         const clearBtn = document.getElementById('clear-search-devices');
-        if (clearBtn) clearBtn.style.display = currentSearchTerm ? 'block' : 'none';
+        if (clearBtn) clearBtn.style.display = currentSearchTerm ? 'flex' : 'none';
         window._pendingDeviceSearch = undefined;
     }
 
@@ -298,34 +392,21 @@ export async function fetchDevicesTable() {
     if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
     try {
-        const cacheBuster = '?t=' + new Date().getTime();
-        let typeQuery = currentFilterType === 'Semua' ? '' : currentFilterType;
-        
-        // Map UI labels to backend database enum values
-        if (typeQuery === 'Access Point') {
-            typeQuery = 'access_point';
-        } else if (typeQuery) {
-            typeQuery = typeQuery.toLowerCase();
-        }
-
-        const resInv = await fetch(`${API_ENDPOINTS.INVENTORY}?page=${state.pagination.devices.current}&limit=${state.pagination.devices.limit}&search=${encodeURIComponent(currentSearchTerm)}&type=${encodeURIComponent(typeQuery)}&t=${new Date().getTime()}`);
+        // Fetch full inventory to allow instant client-side filtering across ALL devices without dropping any pages
+        const resInv = await fetch(`${API_ENDPOINTS.INVENTORY}?page=1&limit=10000&t=${new Date().getTime()}`);
         const invResponse = await resInv.json();
         
-        // Phase 9: Use realTime WebSocket state instead of duplicate HTTP polling
         const metrics = metricsStore.getState().fullMetrics || [];
+        const allDevices = invResponse.data || [];
 
-        let paginated = invResponse.data || [];
-        const totalItems = invResponse.total || 0;
-        state.pagination.devices.total = totalItems;
-
-        // Update top inventory summary stats with GLOBAL totals so KPI math is 100% accurate
+        // 1. Update top inventory summary stats with GLOBAL totals so KPI math is 100% accurate
         const elTotalCount = document.getElementById('devices-total-count');
         const elOnlineCount = document.getElementById('devices-online-count');
         const elOfflineCount = document.getElementById('devices-offline-count');
         const badgeTableCount = document.getElementById('device-table-count-badge');
         
         if (Array.isArray(metrics) && metrics.length > 0) {
-            const globalTotal = Math.max(metrics.length, totalItems);
+            const globalTotal = Math.max(metrics.length, allDevices.length);
             const onCount = metrics.filter(m => isOnline(m.status)).length;
             const offCount = Math.max(0, globalTotal - onCount);
             
@@ -356,21 +437,58 @@ export async function fetchDevicesTable() {
             setChipCount('count-chip-server', counts.server);
             setChipCount('count-chip-firewall', counts.firewall);
         } else if (elTotalCount) {
-            elTotalCount.innerText = totalItems;
+            elTotalCount.innerText = allDevices.length;
         }
 
+        // 2. Perform filtering across ALL inventory devices
+        let filtered = allDevices.filter(d => {
+            // A. Category Filter
+            if (currentFilterType !== 'All' && currentFilterType !== 'Semua') {
+                const devType = (d.device_type || '').toLowerCase();
+                const targetType = currentFilterType.toLowerCase();
+                if (targetType === 'access point') {
+                    if (!devType.includes('access point') && !devType.includes('access_point') && devType !== 'ap') return false;
+                } else if (!devType.includes(targetType)) {
+                    return false;
+                }
+            }
+
+            // B. Status Filter
+            if (currentStatusFilter !== 'all') {
+                const m = metrics.find(x => (x.ip_address || x.ip) === d.ip_address);
+                const devOnline = isOnline(m ? m.status : d.status);
+                if (currentStatusFilter === 'online' && !devOnline) return false;
+                if (currentStatusFilter === 'offline' && devOnline) return false;
+            }
+
+            // C. Text Search Filter
+            if (currentSearchTerm) {
+                const term = currentSearchTerm.toLowerCase();
+                const matchName = (d.name || '').toLowerCase().includes(term);
+                const matchIP = (d.ip_address || '').toLowerCase().includes(term);
+                const matchType = (d.device_type || '').toLowerCase().includes(term);
+                if (!matchName && !matchIP && !matchType) return false;
+            }
+
+            return true;
+        });
+
+        // 3. Update active card glow styles & table title badge
+        updateBadgeCardStyles();
+
         if (badgeTableCount) {
-            if (currentFilterType !== 'Semua' || currentSearchTerm) {
+            if (currentFilterType !== 'All' || currentSearchTerm || currentStatusFilter !== 'all') {
                 badgeTableCount.style.display = 'inline-block';
-                badgeTableCount.innerText = `${totalItems} ${currentFilterType !== 'Semua' ? currentFilterType : ''} ditemukan`.trim();
+                const statusSuffix = currentStatusFilter !== 'all' ? ` (${currentStatusFilter.toUpperCase()})` : '';
+                badgeTableCount.innerText = `${filtered.length} ${currentFilterType !== 'All' ? currentFilterType : 'devices'}${statusSuffix} found`.trim();
             } else {
                 badgeTableCount.style.display = 'none';
             }
         }
 
-        // Apply sorting if a sort column is active
-        if (currentSortCol && paginated.length > 1) {
-            paginated.sort((a, b) => {
+        // 4. Apply sorting if a sort column is active
+        if (currentSortCol && filtered.length > 1) {
+            filtered.sort((a, b) => {
                 let valA = a[currentSortCol] || '';
                 let valB = b[currentSortCol] || '';
                 
@@ -399,10 +517,23 @@ export async function fetchDevicesTable() {
             });
         }
 
+        // 5. Paginate filtered result array
+        const totalItems = filtered.length;
+        state.pagination.devices.total = totalItems;
+        const pageLimit = state.pagination.devices.limit || 10;
+        
+        const maxPages = Math.max(1, Math.ceil(totalItems / pageLimit));
+        if (state.pagination.devices.current > maxPages) {
+            state.pagination.devices.current = 1;
+        }
+
+        const startIndex = (state.pagination.devices.current - 1) * pageLimit;
+        const paginated = filtered.slice(startIndex, startIndex + pageLimit);
+
         tbody.innerHTML = '';
         if (paginated.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="fas fa-inbox fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i><br>Tidak ada data perangkat</td></tr>`;
-            renderPagination('devices-module-pagination', 0, state.pagination.devices.limit, 1, 'changeDevicesPage');
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="fas fa-inbox fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i><br>No device data available</td></tr>`;
+            renderPagination('devices-module-pagination', 0, pageLimit, 1, 'changeDevicesPage');
             return;
         }
 
@@ -524,7 +655,7 @@ export async function fetchDevicesTable() {
                 </td>
                 <td style="text-align: right;">
                     <div class="table-actions">
-                        <button class="btn-mini-action detail" aria-label="Detail device" data-ip="${d.ip_address}" data-name="${escapeHtml(d.name)}" data-type="${escapeHtml(d.device_type || 'Router')}" title="Detail Perangkat"><i class="fas fa-eye"></i></button>
+                        <button class="btn-mini-action detail" aria-label="Detail device" data-ip="${d.ip_address}" data-name="${escapeHtml(d.name)}" data-type="${escapeHtml(d.device_type || 'Router')}" title="Device Details"><i class="fas fa-eye"></i></button>
                         <button class="btn-mini-action edit" aria-label="Edit device" data-ip="${d.ip_address}" data-name="${escapeHtml(d.name)}" data-type="${escapeHtml(d.device_type || 'router')}" data-parent="${escapeHtml(d.parent_ip || '')}" title="Edit"><i class="fas fa-edit"></i></button>
                         <button class="btn-mini-action delete" aria-label="Delete device" data-ip="${d.ip_address}" data-name="${escapeHtml(d.name)}" title="Delete"><i class="fas fa-trash"></i></button>
                     </div>
@@ -538,7 +669,7 @@ export async function fetchDevicesTable() {
         renderPagination('devices-module-pagination', state.pagination.devices.total, state.pagination.devices.limit, state.pagination.devices.current, 'changeDevicesPage');
     } catch (e) {
         console.error('Table Fetch Error:', e);
-        showToast('Gagal memuat data perangkat', 'error');
+        showToast('Failed to load device data', 'error');
     } finally {
         if (refreshIcon) {
             setTimeout(() => refreshIcon.classList.remove('fa-spin'), 400);
@@ -565,20 +696,20 @@ export function DeleteDevice(ip, name) {
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
                 <div>
-                    <h3 style="margin:0; font-size:16px; font-weight:700; color:#ffffff;">Delete Perangkat?</h3>
+                    <h3 style="margin:0; font-size:16px; font-weight:700; color:#ffffff;">Delete Device?</h3>
                     <span style="font-size:12px; color:#94a3b8; font-family:monospace;">IP: ${escapeHtml(ip)}</span>
                 </div>
             </div>
             
             <p style="margin:0; font-size:13px; color:#cbd5e1; line-height:1.5;">
-                Apakah Anda yakin ingin mengdelete perangkat <strong style="color:#ffffff;">"${escapeHtml(safeName)}"</strong>?
-                Semua data metrik dan riwayat terkait perangkat ini akan didelete dari sistem.
+                Are you sure you want to delete device <strong style="color:#ffffff;">"${escapeHtml(safeName)}"</strong>?
+                All metrics and history data associated with this device will be deleted permanently from the system.
             </p>
 
             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
                 <button type="button" id="confirm-Delete-Cancel" class="btn-secondary" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; padding:9px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Cancel</button>
                 <button type="button" id="confirm-Delete-btn" class="btn-danger" style="background:#ef4444; border:none; color:#ffffff; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(239,68,68,0.4); transition:all 0.2s ease;">
-                    <i class="fas fa-trash"></i> Delete Perangkat
+                    <i class="fas fa-trash"></i> Delete Device
                 </button>
             </div>
         </div>
@@ -600,17 +731,17 @@ export function DeleteDevice(ip, name) {
 
     btnConfirm.onclick = async () => {
         btnConfirm.disabled = true;
-        btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengdelete...';
+        btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
 
         try {
-            const res = await fetch(API_ENDPOINTS.DEVICES_HAPUS, {
+            const res = await fetch(API_ENDPOINTS.DEVICES_DELETE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ip })
             });
 
             if (res.ok) {
-                showToast(`Perangkat "${safeName}" (${ip}) berhasil didelete!`, 'success');
+                showToast(`Device "${safeName}" (${ip}) successfully deleted!`, 'success');
                 closeModal();
                 
 
@@ -627,15 +758,15 @@ export function DeleteDevice(ip, name) {
                 }
             } else {
                 const errText = await res.text();
-                showToast(`Gagal mengdelete: ${errText}`, 'error');
+                showToast(`Failed to delete: ${errText}`, 'error');
                 btnConfirm.disabled = false;
-                btnConfirm.innerHTML = '<i class="fas fa-trash"></i> Delete Perangkat';
+                btnConfirm.innerHTML = '<i class="fas fa-trash"></i> Delete Device';
             }
         } catch (e) {
             console.error('Delete Error:', e);
-            showToast('Error koneksi saat mengdelete perangkat', 'error');
+            showToast('Connection error while deleting device', 'error');
             btnConfirm.disabled = false;
-            btnConfirm.innerHTML = '<i class="fas fa-trash"></i> Delete Perangkat';
+            btnConfirm.innerHTML = '<i class="fas fa-trash"></i> Delete Device';
         }
     };
 }
@@ -651,18 +782,18 @@ function injectEditModal() {
         <div class="modal-box" style="max-width: 480px; width: 90%; background: #151c2c; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); color: #fff;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
                 <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-edit" style="color: #3b82f6;"></i> Edit Perangkat
+                    <i class="fas fa-edit" style="color: #3b82f6;"></i> Edit Device
                 </h2>
                 <button onclick="document.getElementById('Edit-device-modal').style.display='none'" aria-label="Close modal" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: color 0.2s;"><i class="fas fa-times"></i></button>
             </div>
             <form id="Edit-device-form">
                 <input type="hidden" id="Edit-old-ip">
                 <div style="margin-bottom: 16px;">
-                    <label for="Edit-device-name" style="display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 6px;">Nama Perangkat</label>
+                    <label for="Edit-device-name" style="display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 6px;">Device Name</label>
                     <input type="text" id="Edit-device-name" required class="form-control" style="width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 14px; outline: none; box-sizing: border-box;">
                 </div>
                 <div style="margin-bottom: 16px;">
-                    <label for="Edit-device-category" style="display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 6px;">Kategori Perangkat</label>
+                    <label for="Edit-device-category" style="display: block; font-size: 13px; font-weight: 500; color: #cbd5e1; margin-bottom: 6px;">Device Category</label>
                     <select id="Edit-device-category" required class="form-control" style="width: 100%; padding: 10px 14px; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 14px; outline: none; appearance: auto; box-sizing: border-box;" aria-label="Edit-device-category">
                         <option value="router">Router</option>
                         <option value="radio">Radio</option>
@@ -678,7 +809,7 @@ function injectEditModal() {
                 </div>
                 <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
                     <button type="button" onclick="document.getElementById('Edit-device-modal').style.display='none'" class="btn-secondary" style="padding: 9px 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Cancel</button>
-                    <button type="submit" class="btn-primary" style="padding: 9px 20px; background: #3b82f6; border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">Save Pereditan</button>
+                    <button type="submit" class="btn-primary" style="padding: 9px 20px; background: #3b82f6; border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -695,7 +826,7 @@ function injectEditModal() {
         
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
 
         try {
@@ -705,17 +836,17 @@ function injectEditModal() {
                 body: JSON.stringify({ old_ip: oldIp, new_ip: newIp, name, type, parent_ip: '' })
             });
             if (res.ok) {
-                showToast(`Perangkat "${name}" berhasil diperbarui`, 'success');
+                showToast(`Device "${name}" successfully updated!`, 'success');
                 document.getElementById('Edit-device-modal').style.display = 'none';
                 if (window.fetchDevicesTable) {
                     window.fetchDevicesTable();
                 }
             } else {
                 const errTxt = await res.text();
-                showToast(`Gagal memperbarui perangkat: ${errTxt}`, 'error');
+                showToast(`Failed to update device: ${errTxt}`, 'error');
             }
         } catch (err) {
-            showToast('Error koneksi ke server', 'error');
+            showToast('Connection error to server', 'error');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;

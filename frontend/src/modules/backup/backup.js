@@ -34,13 +34,13 @@ function bindExport() {
             activityLogger.log({
                 module: 'backup',
                 Action: 'EXPORT',
-                Description: `Mengekspor konfigurasi sistem ke file: ${filename}`
+                Description: `Exported system configuration to file: ${filename}`
             });
 
-            window.showToast?.('Berhasil mengekspor konfigurasi', 'success');
+            window.showToast?.('Successfully exported configuration', 'success');
         } catch (e) {
             console.error(e);
-            window.showToast?.('Gagal mengekspor konfigurasi', 'error');
+            window.showToast?.('Failed to export configuration', 'error');
         }
     });
 }
@@ -81,11 +81,11 @@ function SaveAutoBackupSetting(enabled, schedule) {
         activityLogger.log({
             module: 'Settings',
             Action: 'UPDATE',
-            Description: `Mengedit setelan Auto Backup: ${enabled ? 'Aktif ('+schedule+')' : 'Nonaktif'}`
+            Description: `Edited Auto Backup settings: ${enabled ? 'Active ('+schedule+')' : 'Inactive'}`
         });
-        window.showToast?.('Setelan Auto Backup disave', 'success');
+        window.showToast?.('Auto Backup settings saved', 'success');
     } catch (e) {
-        window.showToast?.(e.message || 'Gagal menyimpan setelan backup', 'error');
+        window.showToast?.(e.message || 'Failed to save backup settings', 'error');
     }
 }
 
@@ -125,8 +125,8 @@ function bindImport() {
                 const cats = parsed.payload?.Settings ? Object.keys(parsed.payload.Settings).length : 0;
                 const User = Array.isArray(parsed.payload?.User) ? parsed.payload.User.length : 0;
                 
-                elCategories.textContent = `${cats} Kategori`;
-                elUser.textContent = `${User} Akun`;
+                elCategories.textContent = `${cats} Categories`;
+                elUser.textContent = `${User} Accounts`;
 
                 // Switch UI
                 dropZone.style.display = 'none';

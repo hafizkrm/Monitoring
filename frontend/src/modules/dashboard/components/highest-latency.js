@@ -28,7 +28,7 @@ function updateHighestLatency(metrics) {
     const list = (metrics && metrics.length > 0) ? metrics : (metricsStore.getState().fullMetrics || []);
 
     if (!list || list.length === 0) {
-        container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">Belum ada perangkat terdaftar</div>`;
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:10px;">No registered devices found</div>`;
         return;
     }
 

@@ -31,7 +31,7 @@ func TestGoroutineStability(t *testing.T) {
 			Version:   "2c",
 		},
 	}
-	
+
 	// Create a dummy logger
 	dummyLog := logger.InitLogger(config.LoggerConfig{})
 	client := NewClient(cfg, dummyLog)

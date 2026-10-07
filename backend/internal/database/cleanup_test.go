@@ -176,7 +176,7 @@ func TestCleanupOldData_ConcurrentInsert(t *testing.T) {
 	}()
 
 	wg.Wait()
-	
+
 	if insertSuccess != 50 {
 		t.Errorf("Expected 50 successful concurrent inserts, got %d", insertSuccess)
 	}

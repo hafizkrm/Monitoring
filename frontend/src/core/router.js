@@ -76,7 +76,7 @@ function ensureModuleLoaded(view) {
             }
             htmlCache[view] = true;
         } else {
-            viewWrapper.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center;">Modul <b>${view}</b> belum tersedia.</div>`;
+            viewWrapper.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center;">Module <b>${view}</b> is not available.</div>`;
         }
     }
     return viewWrapper;
@@ -105,7 +105,7 @@ export async function switchView(view) {
 
     if (!canAccess(view)) {
         console.warn(`Access denied to view: ${view}`);
-        window.showToast?.('Anda tidak memiliki akses ke halaman ini', 'error');
+        window.showToast?.('You do not have access to this page', 'error');
         if (view !== 'dashboard') {
             switchView('dashboard');
         }
@@ -142,7 +142,7 @@ export async function switchView(view) {
     }
     const subtitleEl = document.getElementById('view-subtitle');
     if (subtitleEl) {
-        subtitleEl.innerText = VIEW_SUBTITLES[view] || 'Sistem Monitoring Jaringan';
+        subtitleEl.innerText = VIEW_SUBTITLES[view] || 'Network Monitoring System';
     }
 
     try {

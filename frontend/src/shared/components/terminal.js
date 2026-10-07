@@ -42,7 +42,7 @@ export async function autoResolveAlertIfSuccessful(ip) {
         const res = await fetch(`/api/alerts/resolve-by-ip?ip=${encodeURIComponent(ip)}`, { method: 'POST' });
         if (res.ok) {
             if (window.showToast) {
-                window.showToast(`Status ${ip} telah dipulihkan. Alert diselesaikan.`);
+                window.showToast(`Status for ${ip} restored. Alert resolved.`);
             }
             if (typeof window.monRenderAlerts === 'function') {
                 window.monRenderAlerts();
@@ -73,7 +73,7 @@ function runDiagnostic(type, ip) {
         output.scrollTop = output.scrollHeight;
     };
 
-    appendLine(isPing ? `Mengirim ping ke ${ip}...` : `Menjalankan traceroute ke ${ip}...`, '#58a6ff');
+    appendLine(isPing ? `Sending ping to ${ip}...` : `Running traceroute to ${ip}...`, '#58a6ff');
 
     const session = getStorageItem(STORAGE_KEYS.SESSION);
     const token = session ? session.token : '';
@@ -85,7 +85,7 @@ function runDiagnostic(type, ip) {
         const text = e.data || '';
         if (text === 'DONE' || text === '[DONE]' || text === '[Process Completed]') {
             es.close();
-            appendLine(isPing ? '--- Selesai ---' : '--- Traceroute Selesai ---', '#28c840');
+            appendLine(isPing ? '--- Ping Complete ---' : '--- Traceroute Complete ---', '#28c840');
             if (success) {
                 autoResolveAlertIfSuccessful(ip);
             }
@@ -104,7 +104,7 @@ function runDiagnostic(type, ip) {
     
     es.onerror = () => {
         es.close();
-        appendLine('Koneksi ke backend terputus atau tidak tersedia.', '#ff5f57');
+        appendLine('Connection to backend disconnected or unavailable.', '#ff5f57');
     };
 }
 

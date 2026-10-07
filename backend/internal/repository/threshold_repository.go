@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
 )
 
@@ -132,4 +133,3 @@ func (r *thresholdRepository) DeleteRule(ctx context.Context, id int) error {
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
-

@@ -145,7 +145,7 @@ async function generateReport() {
         
     } catch (error) {
         console.error('Failed to Buat Reports:', error);
-        tbody.innerHTML = `<tr><td colspan="10" class="table-empty-msg text-danger" style="text-align:center; padding:30px;"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data laporan. ${error.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="table-empty-msg text-danger" style="text-align:center; padding:30px;"><i class="fas fa-exclamation-triangle"></i> Failed to load report data. ${error.message}</td></tr>`;
         if (rowCountEl) rowCountEl.textContent = '0';
     }
 }
@@ -253,21 +253,21 @@ function renderReport(type, data, metricsData = [], isFiltering = false) {
     // Render Table Headers
     let headers = [];
     if (type === 'availability' || type === 'sla') {
-        headers = ['Perangkat', 'IP Address', 'Tipe', 'Total UpTime', 'Total DownTime', 'Kali Down', 'Availability %', 'Target SLA (99%)', 'Status Saat Ini'];
+        headers = ['Device', 'IP Address', 'Type', 'Total UpTime', 'Total DownTime', 'Down Count', 'Availability %', 'Target SLA (99%)', 'Current Status'];
     } else if (type === 'performance') {
-        headers = ['Perangkat', 'IP Address', 'Avg CPU', 'Max CPU', 'Avg RAM', 'Max RAM', 'Avg Traffic', 'Status Saat Ini'];
+        headers = ['Device', 'IP Address', 'Avg CPU', 'Max CPU', 'Avg RAM', 'Max RAM', 'Avg Traffic', 'Current Status'];
     } else if (type === 'incidents') {
-        headers = ['Time', 'Perangkat', 'Tingkat', 'Message Alert', 'Status'];
+        headers = ['Time', 'Device', 'Severity', 'Alert Message', 'Status'];
     } else if (type === 'down_frequency') {
-        headers = ['Rank', 'Perangkat', 'IP Address', 'Tipe', 'Kali Down', 'Terakhir Down', 'Status Saat Ini'];
+        headers = ['Rank', 'Device', 'IP Address', 'Type', 'Down Count', 'Last Down', 'Current Status'];
     } else if (type === 'traffic_monthly' || type === 'bandwidth_top') {
-        headers = ['Perangkat', 'IP Address', 'Avg Traffic', 'Max Traffic', 'Status Saat Ini'];
+        headers = ['Device', 'IP Address', 'Avg Traffic', 'Max Traffic', 'Current Status'];
     } else if (type === 'downTime_monthly') {
-        headers = ['Perangkat', 'IP Address', 'Kali Down', 'Total Durasi Down', 'Status Saat Ini'];
+        headers = ['Device', 'IP Address', 'Down Count', 'Total Downtime Duration', 'Current Status'];
     } else if (type === 'vpn_monthly') {
-        headers = ['Tanggal Terakhir', 'Username', 'Service', 'IP Address', 'Durasi Connect'];
+        headers = ['Last Connection', 'Username', 'Service', 'IP Address', 'Connected Duration'];
     } else if (type === 'network_quality') {
-        headers = ['Perangkat', 'IP Address', 'Rata-rata Latency', 'Packet Loss', 'Status Saat Ini'];
+        headers = ['Device', 'IP Address', 'Avg Latency', 'Packet Loss', 'Current Status'];
     }
     
     const trHead = document.createElement('tr');
@@ -628,8 +628,8 @@ function renderReportChart(type, items, summary) {
     let chartType = 'bar';
 
     if (type === 'availability' || type === 'sla') {
-        chartTitle.textContent = 'Grafik Ketersediaan / SLA Perangkat (%)';
-        chartSubtitle.textContent = 'Tingkat Availability (%) per Perangkat Jaringan';
+        chartTitle.textContent = 'Device Availability / SLA Chart (%)';
+        chartSubtitle.textContent = 'Availability Rate (%) per Network Device';
         labels = items.slice(0, 15).map(i => i.name || i.ip || 'Unknown');
         const dataVals = items.slice(0, 15).map(i => parseFloat(i.availability_pct) || 0);
         datasets = [{
@@ -641,8 +641,8 @@ function renderReportChart(type, items, summary) {
             borderRadius: 6
         }];
     } else if (type === 'performance') {
-        chartTitle.textContent = 'Grafik Performa Resource (CPU & RAM)';
-        chartSubtitle.textContent = 'Rata-rata Useran CPU (%) dan RAM (%)';
+        chartTitle.textContent = 'Resource Performance Chart (CPU & RAM)';
+        chartSubtitle.textContent = 'Average CPU (%) and RAM (%) Usage';
         labels = items.slice(0, 15).map(i => i.name || i.ip || 'Unknown');
         datasets = [
             {
@@ -661,19 +661,19 @@ function renderReportChart(type, items, summary) {
             }
         ];
     } else if (type === 'down_frequency' || type === 'downTime_monthly') {
-        chartTitle.textContent = 'Frekuensi Perangkat Down & DownTime';
-        chartSubtitle.textContent = 'Jumlah kejadian down per perangkat';
+        chartTitle.textContent = 'Device Down Frequency & Downtime';
+        chartSubtitle.textContent = 'Number of outage incidents per device';
         labels = items.slice(0, 15).map(i => i.name || i.ip || 'Unknown');
         datasets = [{
-            label: 'Frekuensi Down (kali)',
+            label: 'Down Frequency (times)',
             data: items.slice(0, 15).map(i => i.down_count || i.kali_down || 0),
             backgroundColor: 'rgba(239, 68, 68, 0.7)',
             borderColor: '#ef4444',
             borderRadius: 6
         }];
     } else if (type === 'vpn_monthly') {
-        chartTitle.textContent = 'Visualisasi Riwayat User VPN';
-        chartSubtitle.textContent = 'Estimasi Durasi Terhubung User VPN (Jam/Hari)';
+        chartTitle.textContent = 'VPN User Connection History';
+        chartSubtitle.textContent = 'Estimated VPN User Connection Duration (Hours/Day)';
         labels = items.slice(0, 15).map(i => i.name || i.Username || 'User');
         const durationVals = items.slice(0, 15).map(i => {
             const u = i.upTime || '';
@@ -687,15 +687,15 @@ function renderReportChart(type, items, summary) {
             return hours || 1;
         });
         datasets = [{
-            label: 'Durasi Terhubung (Jam)',
+            label: 'Connected Duration (Hours)',
             data: durationVals,
             backgroundColor: 'rgba(6, 182, 212, 0.7)',
             borderColor: '#06b6d4',
             borderRadius: 6
         }];
     } else if (type === 'traffic_monthly' || type === 'bandwidth_top') {
-        chartTitle.textContent = 'Visualisasi Traffic & Bandwidth';
-        chartSubtitle.textContent = 'Perkiraan Useran Bandwidth Perangkat (Mbps)';
+        chartTitle.textContent = 'Traffic & Bandwidth Visualization';
+        chartSubtitle.textContent = 'Estimated Device Bandwidth Usage (Mbps)';
         labels = items.slice(0, 15).map(i => i.name || i.ip || 'Unknown');
         datasets = [{
             label: 'Avg Traffic',
@@ -708,8 +708,8 @@ function renderReportChart(type, items, summary) {
             borderRadius: 6
         }];
     } else if (type === 'network_quality') {
-        chartTitle.textContent = 'Kualitas Jaringan (Latency ms)';
-        chartSubtitle.textContent = 'Rata-rata Latency per Perangkat';
+        chartTitle.textContent = 'Network Quality (Latency ms)';
+        chartSubtitle.textContent = 'Average Latency per Device';
         labels = items.slice(0, 15).map(i => i.name || i.ip || 'Unknown');
         datasets = [{
             label: 'Latency (ms)',
@@ -720,8 +720,8 @@ function renderReportChart(type, items, summary) {
         }];
     } else if (type === 'incidents') {
         chartType = 'doughnut';
-        chartTitle.textContent = 'Distribusi Severity Insiden';
-        chartSubtitle.textContent = 'Proporsi Severity Alert';
+        chartTitle.textContent = 'Incident Severity Distribution';
+        chartSubtitle.textContent = 'Alert Severity Proportion';
         const critCount = items.filter(i => i.severity === 'critical').length;
         const warnCount = items.filter(i => i.severity === 'warning').length;
         const infoCount = items.filter(i => i.severity === 'info' || !i.severity).length;
@@ -820,21 +820,21 @@ function exportCSV() {
 
 function printReport() {
     const typeLabels = {
-        'sla': 'Reports SLA & Ketersediaan Perangkat Jaringan',
-        'availability': 'Reports SLA & Ketersediaan Perangkat Jaringan',
-        'network_quality': 'Reports Kualitas Jaringan (Rata-rata Latency & Packet Loss)',
-        'traffic_monthly': 'Reports Traffic & Bandwidth Perangkat (1 Bulan Terakhir)',
-        'downTime_monthly': 'Reports Durasi DownTime Perangkat (1 Bulan Terakhir)',
-        'down_frequency': 'Reports Frekuensi Perangkat Down (Top Disruption)',
-        'performance': 'Reports Performa Resource Perangkat (CPU & RAM)',
-        'vpn_monthly': 'Reports Riwayat Koneksi User VPN (1 Bulan Terakhir)',
-        'incidents': 'Reports Insiden & Log Alert Perangkat'
+        'sla': 'Network Device Availability & SLA Report',
+        'availability': 'Network Device Availability & SLA Report',
+        'network_quality': 'Network Quality Report (Average Latency & Packet Loss)',
+        'traffic_monthly': 'Device Traffic & Bandwidth Report (Last 30 Days)',
+        'downTime_monthly': 'Device Downtime Duration Report (Last 30 Days)',
+        'down_frequency': 'Device Down Frequency Report (Top Disruption)',
+        'performance': 'Device Resource Performance Report (CPU & RAM)',
+        'vpn_monthly': 'VPN User Connection History Report (Last 30 Days)',
+        'incidents': 'Device Incidents & Alert Logs Report'
     };
     const rangeLabels = {
-        'today': 'Hari Ini (' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ')',
-        '7days': '7 Hari Terakhir',
-        '30days': '30 Hari Terakhir',
-        'custom': 'Rentang Kustom (' + (document.getElementById('report-start-date')?.value || '—') + ' s/d ' + (document.getElementById('report-end-date')?.value || '—') + ')'
+        'today': 'Today (' + new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) + ')',
+        '7days': 'Last 7 Days',
+        '30days': 'Last 30 Days',
+        'custom': 'Custom Range (' + (document.getElementById('report-start-date')?.value || '—') + ' to ' + (document.getElementById('report-end-date')?.value || '—') + ')'
     };
 
     const typeEl = document.getElementById('report-type');

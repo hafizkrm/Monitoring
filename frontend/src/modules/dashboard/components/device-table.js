@@ -17,7 +17,7 @@ export function initDeviceTable() {
 }
 
 export function setDeviceFilter(filter) {
-    uiStore.setState({ deviceFilter: filter || 'Semua' });
+    uiStore.setState({ deviceFilter: filter || 'All' });
     
     // Update button active states in filter-pills and controls
     document.querySelectorAll('.filter-pills .filter-pill, .controls .btn-sm').forEach(btn => {
@@ -26,7 +26,7 @@ export function setDeviceFilter(filter) {
         btn.style.border = '';
         btn.style.color = '';
     });
-    const filterLower = (filter || 'Semua').toLowerCase();
+    const filterLower = (filter || 'All').toLowerCase();
     const activeBtns = document.querySelectorAll(`
         .filter-pills .filter-pill[onclick*="'${filter}'"],
         .filter-pills .filter-pill[onclick*="'${filterLower}'"],
@@ -73,10 +73,10 @@ function updateDevicesTable(metrics) {
         safeSetText('pill-count-firewall', counts.firewall);
     }
 
-    const currentDeviceFilter = uiStore.getState().deviceFilter || 'Semua';
+    const currentDeviceFilter = uiStore.getState().deviceFilter || 'All';
     let filtered = baseList;
     
-    if (currentDeviceFilter && currentDeviceFilter !== 'Semua' && currentDeviceFilter !== 'all') {
+    if (currentDeviceFilter && currentDeviceFilter !== 'All' && currentDeviceFilter !== 'all') {
         const filterLower = currentDeviceFilter.toLowerCase().replace(/_/g, ' ');
         filtered = baseList.filter(m => {
             const rawType = (m.device_type || m.type || '').toLowerCase().replace(/_/g, ' ');
@@ -127,7 +127,7 @@ function updateDevicesTable(metrics) {
     const recent = sortedDesc.slice(0, 5);
 
     if (recent.length === 0) {
-        safeSetHTML(tbody, `<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Tidak ada perangkat untuk kategori ini</td></tr>`);
+        safeSetHTML(tbody, `<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">No devices found in this category</td></tr>`);
         return;
     }
 

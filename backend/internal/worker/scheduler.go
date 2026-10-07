@@ -195,7 +195,7 @@ func (s *Scheduler) dispatchDueDevices() {
 			job.ScheduledAt = time.Now().Add(5 * time.Second) // backoff
 			heap.Push(&s.pq, job)
 			s.mu.Unlock()
-			
+
 			s.logger.Warn("worker queue full, job delayed", map[string]interface{}{"device": device.Name})
 			return // If queue is full, no point popping more
 		}

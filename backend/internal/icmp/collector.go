@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-ping/ping"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
+	probing "github.com/prometheus-community/pro-bing"
 )
 
 // ICMPCollector provides telemetry via ICMP Ping.
@@ -62,7 +62,7 @@ func (c *ICMPCollector) GetNetworkStats(ctx context.Context, ip string) (latency
 		return 0, 0, 100, fmt.Errorf("no reply from %s (OS Ping)", ip)
 	}
 
-	pinger, err := ping.NewPinger(ip)
+	pinger, err := probing.NewPinger(ip)
 	if err == nil {
 		pinger.Count = 3
 		pinger.Timeout = 2 * time.Second

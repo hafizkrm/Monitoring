@@ -37,14 +37,16 @@ type Incident struct {
 }
 
 type Alert struct {
-	ID         int64     `json:"id"`
-	IncidentID *int64    `json:"incident_id"`
-	Type       string    `json:"type"`
-	Message    string    `json:"message"`
-	IsRead     bool      `json:"is_read"`
-	CreatedAt  time.Time `json:"created_at"`
-	DeviceName string    `json:"device_name"`
-	DeviceIP   string    `json:"device_ip"`
+	ID             int64      `json:"id"`
+	IncidentID     *int64     `json:"incident_id"`
+	Type           string     `json:"type"`
+	Message        string     `json:"message"`
+	IsRead         bool       `json:"is_read"`
+	CreatedAt      time.Time  `json:"created_at"`
+	DeviceName     string     `json:"device_name"`
+	DeviceIP       string     `json:"device_ip"`
+	IncidentStatus string     `json:"incident_status"`
+	ResolvedAt     *time.Time `json:"resolved_at"`
 }
 
 // GetActiveIncidents handles fetching active incidents
@@ -100,7 +102,7 @@ func GetActiveIncidents(db *database.Database) http.HandlerFunc {
 	}
 }
 
-// GetAlerts handles fetching unread UI alerts
+// GetAlerts handles fetching both active and resolved alerts for UI
 func GetAlerts(db *database.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -108,13 +110,14 @@ func GetAlerts(db *database.Database) http.HandlerFunc {
 
 		query := `
 			SELECT a.id, a.incident_id, COALESCE(a.type, 'warning'), COALESCE(a.message, ''), COALESCE(a.is_read, 0), COALESCE(a.created_at, CURRENT_TIMESTAMP), 
-			       COALESCE(NULLIF(d.name, ''), 'Perangkat') as device_name, 
-			       COALESCE(NULLIF(d.ip_address, ''), '') as device_ip 
+			       COALESCE(NULLIF(d.name, ''), 'Device') as device_name, 
+			       COALESCE(NULLIF(d.ip_address, ''), '') as device_ip,
+			       COALESCE(i.status, 'active') as incident_status,
+			       i.resolved_at
 			FROM alerts a 
 			LEFT JOIN incidents i ON a.incident_id = i.id 
 			LEFT JOIN devices d ON d.id = i.device_id
-			WHERE a.is_read = 0
-			ORDER BY a.created_at DESC LIMIT 100
+			ORDER BY a.created_at DESC LIMIT 200
 		`
 		rows, err := db.QueryContext(ctx, query)
 		if err != nil {
@@ -129,11 +132,12 @@ func GetAlerts(db *database.Database) http.HandlerFunc {
 		for rows.Next() {
 			var id int64
 			var incidentID sql.NullInt64
-			var alertType, message, devName, devIP sql.NullString
+			var alertType, message, devName, devIP, incStatus sql.NullString
 			var isRead sql.NullBool
 			var createdAt sql.NullTime
+			var resolvedAt sql.NullTime
 
-			if err := rows.Scan(&id, &incidentID, &alertType, &message, &isRead, &createdAt, &devName, &devIP); err != nil {
+			if err := rows.Scan(&id, &incidentID, &alertType, &message, &isRead, &createdAt, &devName, &devIP, &incStatus, &resolvedAt); err != nil {
 				log.Printf("[ERROR] GetAlerts scan error: %v", err)
 				continue
 			}
@@ -141,6 +145,11 @@ func GetAlerts(db *database.Database) http.HandlerFunc {
 			var incID *int64
 			if incidentID.Valid {
 				incID = &incidentID.Int64
+			}
+
+			var resAt *time.Time
+			if resolvedAt.Valid {
+				resAt = &resolvedAt.Time
 			}
 
 			finalIP := devIP.String
@@ -151,14 +160,16 @@ func GetAlerts(db *database.Database) http.HandlerFunc {
 			}
 
 			alerts = append(alerts, Alert{
-				ID:         id,
-				IncidentID: incID,
-				Type:       alertType.String,
-				Message:    message.String,
-				IsRead:     isRead.Bool,
-				CreatedAt:  createdAt.Time,
-				DeviceName: devName.String,
-				DeviceIP:   finalIP,
+				ID:             id,
+				IncidentID:     incID,
+				Type:           alertType.String,
+				Message:        message.String,
+				IsRead:         isRead.Bool,
+				CreatedAt:      createdAt.Time,
+				DeviceName:     devName.String,
+				DeviceIP:       finalIP,
+				IncidentStatus: incStatus.String,
+				ResolvedAt:     resAt,
 			})
 		}
 
@@ -191,7 +202,31 @@ func MarkAlertRead(db *database.Database) http.HandlerFunc {
 		}
 
 		userID, username := getUserInfoFromContext(r)
-		_ = db.InsertActivityLog(r.Context(), userID, username, "UPDATE", "Alerts", "Mengakui (acknowledge) alert ID: "+id, r.RemoteAddr)
+		_ = db.InsertActivityLog(r.Context(), userID, username, "UPDATE", "Alerts", "Acknowledged alert ID: "+id, r.RemoteAddr)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"success": true}`))
+	}
+}
+
+// MarkAllAlertsRead marks all unread alerts as read
+func MarkAllAlertsRead(db *database.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		query := `UPDATE alerts SET is_read = 1 WHERE is_read = 0 OR is_read IS NULL`
+		_, err := db.ExecContext(ctx, query)
+		if err != nil {
+			http.Error(w, "Failed to update alerts", http.StatusInternalServerError)
+			return
+		}
+
+		queryInc := `UPDATE incidents SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP WHERE status = 'active'`
+		_, _ = db.ExecContext(ctx, queryInc)
+
+		userID, username := getUserInfoFromContext(r)
+		_ = db.InsertActivityLog(r.Context(), userID, username, "UPDATE", "Alerts", "Acknowledged all alerts", r.RemoteAddr)
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"success": true}`))

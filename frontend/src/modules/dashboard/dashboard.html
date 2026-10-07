@@ -28,36 +28,36 @@
     <!-- Top Stats -->
     <div class="grid-top-stats" style="align-items: stretch;">
         <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
-            onclick="window._pendingDeviceSearch=''; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            onclick="window._pendingDeviceStatusFilter='all'; window._pendingDeviceSearch=''; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
             <div class="stat-icon blue">
                 <i class="fas fa-server"></i>
             </div>
             <div class="stat-card-content inline-util-20">
-                <span class="inline-util-3">TOTAL PERANGKAT</span>
+                <span class="inline-util-3">TOTAL DEVICES</span>
                 <div class="inline-util-4">
                     <span id="stat-total-devices" class="inline-util-5">-</span>
-                    <span class="inline-util-12">Perangkat</span>
+                    <span class="inline-util-12">Devices</span>
                 </div>
             </div>
         </div>
 
         <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
-            onclick="window._pendingDeviceSearch='Online'; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            onclick="window._pendingDeviceStatusFilter='online'; window._pendingDeviceSearch=''; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
             <div class="stat-icon green-trans">
                 <i class="fas fa-wifi"></i>
             </div>
             <div class="stat-card-content inline-util-20">
-                <span class="inline-util-3">PERANGKAT AKTIF</span>
+                <span class="inline-util-3">ONLINE DEVICES</span>
                 <div class="inline-util-4">
                     <span id="stat-online" class="inline-util-5">-</span>
-                    <span class="inline-util-12">Perangkat</span>
+                    <span class="inline-util-12">Devices</span>
                 </div>
                 <span id="stat-online-percentage" class="inline-util-6">-</span>
             </div>
         </div>
 
         <div class="stat-card inline-util-2 hover-scale" style="cursor: pointer;"
-            onclick="window._pendingDeviceSearch='Offline'; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
+            onclick="window._pendingDeviceStatusFilter='offline'; window._pendingDeviceSearch=''; document.querySelector('.nav-item[data-view=\'devices\']')?.click();">
             <div class="stat-icon red-trans"
                 style="position: relative; display: flex; align-items: center; justify-content: center;">
                 <i class="fas fa-wifi" style="opacity: 0.85;"></i>
@@ -65,10 +65,10 @@
                     style="position: absolute; color: var(--accent-red); font-size: 1.15em; font-weight: 900;"></i>
             </div>
             <div class="stat-card-content inline-util-20">
-                <span class="inline-util-3">PERANGKAT OFFLINE</span>
+                <span class="inline-util-3">OFFLINE DEVICES</span>
                 <div class="inline-util-4">
                     <span id="stat-offline" class="inline-util-5">-</span>
-                    <span class="inline-util-12">Perangkat</span>
+                    <span class="inline-util-12">Devices</span>
                 </div>
                 <span id="stat-offline-percentage" style="font-size: 10px; color: var(--accent-red);">-</span>
             </div>
@@ -106,10 +106,10 @@
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <div class="stat-card-content inline-util-20">
-                <span class="inline-util-3">PERINGATAN AKTIF</span>
+                <span class="inline-util-3">ACTIVE ALERTS</span>
                 <div class="inline-util-4">
                     <span id="stat-alerts" class="inline-util-5">-</span>
-                    <span class="inline-util-12">Alert</span>
+                    <span class="inline-util-12">Alerts</span>
                 </div>
             </div>
         </div>
@@ -119,7 +119,7 @@
                 <i class="fas fa-clock"></i>
             </div>
             <div class="stat-card-content inline-util-20">
-                <span class="inline-util-3">RATA-RATA TIME AKTIF</span>
+                <span class="inline-util-3">AVERAGE UPTIME</span>
                 <div class="inline-util-4">
                     <span id="stat-upTime" class="inline-util-5">-</span>
                 </div>
@@ -130,12 +130,12 @@
     <!-- NOC Command Center Grid -->
     <div class="grid-noc">
 
-        <!-- KIRI (25%) -->
+        <!-- LEFT COLUMN (25%) -->
         <div class="noc-col noc-scrollable">
             <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
-                    <span><i class="fas fa-bell" style="color: var(--accent-red);"></i> PERINGATAN TERBARU</span>
-                    <a href="#" class="link-primary" onclick="if(window.switchView){window.switchView('alerts');} else { document.querySelector('.nav-item[data-view=\'alerts\']')?.click(); } return false;">Lihat Semua</a>
+                    <span><i class="fas fa-bell" style="color: var(--accent-red);"></i> RECENT ALERTS</span>
+                    <a href="#" class="link-primary" onclick="if(window.switchView){window.switchView('alerts');} else { document.querySelector('.nav-item[data-view=\'alerts\']')?.click(); } return false;">View All</a>
                 </div>
                 <div class="card-content" id="alerts-list-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
                     <div class="skeleton-block"></div>
@@ -146,9 +146,9 @@
 
             <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
-                    <span><i class="fas fa-tachometer-alt" style="color: #f59e0b;"></i> 5 LATENSI TERTINGGI</span>
+                    <span><i class="fas fa-tachometer-alt" style="color: #f59e0b;"></i> TOP 5 HIGHEST LATENCY</span>
                     <select id="filter-latency-category" onchange="window.onLatencyCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-latency-category">
-                        <option value="all">Semua Tipe</option>
+                        <option value="all">All Types</option>
                         <option value="router">Router</option>
                         <option value="radio">Radio</option>
                         <option value="access_point">Access Point</option>
@@ -166,7 +166,7 @@
 
             <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <div class="card-header">
-                    <span><i class="fas fa-history" style="color: var(--accent-orange);"></i> BARU SAJA REBOOT</span>
+                    <span><i class="fas fa-history" style="color: var(--accent-orange);"></i> RECENTLY REBOOTED</span>
                 </div>
                 <div class="card-content" id="recently-reboot-container"
                     style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
@@ -177,7 +177,7 @@
 
             <div class="card" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <div class="card-header">
-                    <span><i class="fas fa-user" style="color: #38bdf8;"></i> USER OPENVPN TERHUBUNG</span>
+                    <span><i class="fas fa-user-shield" style="color: #38bdf8;"></i> CONNECTED OPENVPN USERS</span>
                 </div>
                 <div class="card-content" id="vpn-User-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
                     <div class="skeleton-block" style="width: 90%"></div>
@@ -186,31 +186,31 @@
             </div>
         </div>
 
-        <!-- TENGAH (50%) -->
+        <!-- MIDDLE COLUMN (50%) -->
         <div class="noc-col noc-scrollable" style="flex: 1; display: flex; flex-direction: column; height: 100%;">
 
             <div class="card"
                 style="padding: 8px 12px; flex: 1; min-height: 140px; display: flex; flex-direction: column;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">GRAFIK BANDWIDTH (REAL-TIME)</h2>
+                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">REAL-TIME BANDWIDTH CHART</h2>
                         <select id="bw-time-range" onchange="window.onBwTimeRangeChange && window.onBwTimeRangeChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="bw-time-range">
-                            <option value="30m">30 Menit</option>
-                            <option value="1h">1 Jam</option>
-                            <option value="6h">6 Jam</option>
-                            <option value="24h">24 Jam</option>
+                            <option value="30m">30 Minutes</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="6h">6 Hours</option>
+                            <option value="24h">24 Hours</option>
                         </select>
                     </div>
                     <div style="display: flex; align-items: center; gap: 14px; font-size: 11px;">
                         <div style="display: flex; align-items: center; gap: 6px; color: #e2e8f0; font-weight: 500;">
                             <span
                                 style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-blue);"></span>
-                            Unduh
+                            Download
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px; color: #e2e8f0; font-weight: 500;">
                             <span
                                 style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);"></span>
-                            Unggah
+                            Upload
                         </div>
                     </div>
                 </div>
@@ -220,10 +220,10 @@
             </div>
 
             <div class="card" style="padding: 6px 10px; flex-shrink: 0;">
-                <h2 style="font-size: 11px; font-weight: 700; margin: 0 0 8px 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">RINGKASAN PERFORMA JARINGAN <span style="font-weight: 400; color: #cbd5e1; font-size: 10px;">(REAL-TIME AVERAGE)</span></h2>
+                <h2 style="font-size: 11px; font-weight: 700; margin: 0 0 8px 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">NETWORK PERFORMANCE SUMMARY <span style="font-weight: 400; color: #cbd5e1; font-size: 10px;">(REAL-TIME AVG)</span></h2>
                 <div class="grid-perf">
                     <div class="inline-util-9">
-                        <span class="inline-util-1">Rata-rata Bandwidth</span>
+                        <span class="inline-util-1">Average Bandwidth</span>
                         <span id="perf-avg-bw" class="inline-util-10">0 Mbps</span>
                         <span id="perf-avg-bw-trend" class="inline-util-6"><i class="fas fa-arrow-up"></i> 0.0%</span>
                         <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
@@ -235,7 +235,7 @@
                         </svg>
                     </div>
                     <div class="inline-util-9">
-                        <span class="inline-util-1">Bandwidth Mactionmal</span>
+                        <span class="inline-util-1">Peak Bandwidth</span>
                         <span id="perf-max-bw" class="inline-util-10">0 Mbps</span>
                         <span id="perf-max-bw-trend" class="inline-util-6"><i class="fas fa-arrow-up"></i> 0.0%</span>
                         <svg width="100%" height="24" viewBox="0 0 100 30" preserveAspectRatio="none"
@@ -260,7 +260,7 @@
                         </svg>
                     </div>
                     <div class="inline-util-9">
-                        <span class="inline-util-1">Rata-rata Latensi</span>
+                        <span class="inline-util-1">Average Latency</span>
                         <span id="perf-latency" class="inline-util-10">0.0 ms</span>
                         <span id="perf-latency-trend" class="inline-util-6"><i class="fas fa-arrow-down"></i>
                             -0.0%</span>
@@ -273,7 +273,7 @@
                         </svg>
                     </div>
                     <div class="inline-util-9">
-                        <span class="inline-util-1">Rata-rata Jitter</span>
+                        <span class="inline-util-1">Average Jitter</span>
                         <span id="perf-jitter" class="inline-util-10">0.0 ms</span>
                         <span id="perf-jitter-trend" class="inline-util-6"><i class="fas fa-arrow-down"></i>
                             -0.0%</span>
@@ -293,11 +293,11 @@
                 <div
                     style="padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">STATUS PERANGKAT TERBARU</h2>
-                        <span id="dashboard-device-subtitle" style="font-size: 10px; color: var(--text-muted); font-weight: 400; text-transform: uppercase;">(TOP 5 TERBARU)</span>
+                        <h2 style="font-size: 11px; font-weight: 700; margin: 0; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.8px;">RECENT DEVICE STATUS</h2>
+                        <span id="dashboard-device-subtitle" style="font-size: 10px; color: var(--text-muted); font-weight: 400; text-transform: uppercase;">(TOP 5 RECENT)</span>
                     </div>
                     <div class="filter-pills" style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="filter-pill active" onclick="filterDeviceTable('all', this)"><i class="fas fa-th-large" style="font-size: 10px; margin-right: 4px;"></i>Semua <span id="pill-count-all" class="pill-badge">0</span></button>
+                        <button class="filter-pill active" onclick="filterDeviceTable('all', this)"><i class="fas fa-th-large" style="font-size: 10px; margin-right: 4px;"></i>All <span id="pill-count-all" class="pill-badge">0</span></button>
                         <button class="filter-pill" onclick="filterDeviceTable('router', this)"><i class="fas fa-server" style="font-size: 10px; margin-right: 4px; color: #3b82f6;"></i>Router <span id="pill-count-router" class="pill-badge">0</span></button>
                         <button class="filter-pill" onclick="filterDeviceTable('radio', this)"><i class="fas fa-broadcast-tower" style="font-size: 10px; margin-right: 4px; color: #f59e0b;"></i>Radio <span id="pill-count-radio" class="pill-badge">0</span></button>
                         <button class="filter-pill" onclick="filterDeviceTable('switch', this)"><i class="fas fa-network-wired" style="font-size: 10px; margin-right: 4px; color: #8b5cf6;"></i>Switch <span id="pill-count-switch" class="pill-badge">0</span></button>
@@ -313,9 +313,9 @@
                         style="width: 100%; table-layout: fixed; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th style="width: 35%; text-align: left;">PERANGKAT</th>
-                                <th style="width: 18%; text-align: center;">ALAMAT IP</th>
-                                <th style="width: 12%; text-align: center;">TIPE</th>
+                                <th style="width: 35%; text-align: left;">DEVICE</th>
+                                <th style="width: 18%; text-align: center;">IP ADDRESS</th>
+                                <th style="width: 12%; text-align: center;">TYPE</th>
                                 <th style="width: 10%; text-align: center;">STATUS</th>
                                 <th style="width: 25%; text-align: center;">UPTIME</th>
                             </tr>
@@ -456,13 +456,13 @@
             </div>
         </div>
 
-        <!-- KANAN (25%) -->
+        <!-- RIGHT COLUMN (25%) -->
         <div class="noc-col noc-scrollable noc-right">
 
             <div class="card" id="device-type-card" style="display: flex; flex-direction: column;">
                 <div class="card-header">
                     <h2 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> Distribusi Tipe Perangkat
+                        <i class="fas fa-chart-pie" style="color: var(--accent-purple);"></i> DEVICE TYPE DISTRIBUTION
                     </h2>
                 </div>
                 <div
@@ -553,10 +553,10 @@
             <div class="card" id="top-cpu-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
                 <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px;">
                     <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #cbd5e1;">
-                        <i class="fas fa-heartbeat" style="color: var(--accent-green);"></i> 5 Kesehatan Perangkat Teratas
+                        <i class="fas fa-heartbeat" style="color: var(--accent-green);"></i> TOP 5 DEVICE HEALTH
                     </span>
                     <select id="filter-health-category" onchange="window.onHealthCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-health-category">
-                        <option value="all">Semua Tipe</option>
+                        <option value="all">All Types</option>
                         <option value="router">Router</option>
                         <option value="radio">Radio</option>
                         <option value="access_point">Access Point</option>
@@ -574,10 +574,10 @@
             <div class="card" id="top-bw-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
                 <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px;">
                     <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #cbd5e1;">
-                        <i class="fas fa-chart-bar" style="color: var(--accent-cyan);"></i> 5 Perangkat Bandwidth Tertinggi
+                        <i class="fas fa-chart-bar" style="color: var(--accent-cyan);"></i> TOP 5 BANDWIDTH CONSUMPTION
                     </span>
                     <select id="filter-top-bw-category" onchange="window.onTopBwCategoryChange(this.value)" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer; outline: none;" aria-label="filter-top-bw-category">
-                        <option value="all">Semua Tipe</option>
+                        <option value="all">All Types</option>
                         <option value="router">Router</option>
                         <option value="access_point">Access Point</option>
                         <option value="switch">Switch</option>
@@ -592,7 +592,7 @@
 
             <div class="card" id="top-interface-card" style="display: flex; flex-direction: column; flex: 1; min-height: 120px;">
                 <div class="card-header">
-                    <span><i class="fas fa-network-wired" style="color: var(--accent-purple);"></i> 5 LALU LINTAS ANTARMUKA TERTINGGI</span>
+                    <span><i class="fas fa-network-wired" style="color: var(--accent-purple);"></i> TOP 5 INTERFACE TRAFFIC</span>
                 </div>
                 <div class="card-content" id="top-interfaces-container" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 6px;">
                     <div class="skeleton-block"></div>

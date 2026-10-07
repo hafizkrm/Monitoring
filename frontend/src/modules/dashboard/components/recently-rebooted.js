@@ -40,8 +40,22 @@ function updateRecentlyRebooted(metrics) {
     }).slice(0, 5); // Take top 5
 
     if (sorted.length === 0) {
-        container.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 8px; color:var(--text-muted); gap:6px;"><i class="fas fa-check-circle" style="font-size:18px; color:var(--accent-green); opacity:0.8;"></i><span style="font-size:11px; font-weight:500;">Semua perangkat stabil (>24 Jam)</span></div>`;
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.justifyContent = 'center';
+        container.innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; width:100%; min-height:100px; padding:18px 12px; text-align:center; background:rgba(16, 185, 129, 0.05); border:1px solid rgba(16, 185, 129, 0.18); border-radius:10px; box-sizing:border-box;">
+            <div style="position:relative; display:flex; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(16, 185, 129, 0.12); border-radius:50%; margin-bottom:8px; box-shadow:0 0 12px rgba(16, 185, 129, 0.25);">
+                <i class="fas fa-shield-halved" style="font-size:16px; color:#4ade80;"></i>
+            </div>
+            <span style="font-size:12px; font-weight:700; color:#4ade80; letter-spacing:0.4px;">SYSTEM STABLE</span>
+            <span style="font-size:10.5px; color:#94a3b8; margin-top:3px;">No unhandled reboots in the last 24 hours</span>
+        </div>`;
         return;
+    } else {
+        container.style.display = '';
+        container.style.flexDirection = '';
+        container.style.justifyContent = '';
     }
 
     const newHTML = sorted.map((device) => {
@@ -64,10 +78,10 @@ function updateRecentlyRebooted(metrics) {
             </div>
             <div class="premium-box-details">
                 <span class="premium-box-title" title="${safeName}">${device.name || device.ip_address || device.ip || 'Unknown'}</span>
-                <span class="premium-box-subtitle">UpTime: ${formattedUpTime}</span>
+                <span class="premium-box-subtitle">Uptime: ${formattedUpTime}</span>
             </div>
             <div class="premium-box-action" style="color: #ffffff; background: ${badgeBg}; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;">
-                ${isCritical ? 'Baru Saja!' : '< 24 Jam'}
+                ${isCritical ? 'Just Now' : '< 24 Hours'}
             </div>
         </div>
         `;

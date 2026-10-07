@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -31,7 +32,7 @@ func AuthMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 			}
 
 			if tokenStr == "" {
-				fmt.Println("[Auth Debug] Missing netmon_token cookie for URL:", r.URL.Path)
+				log.Println("[Auth Debug] Missing netmon_token cookie for URL:", r.URL.Path)
 				http.Error(w, "Missing authentication cookie", http.StatusUnauthorized)
 				return
 			}
@@ -49,7 +50,7 @@ func AuthMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 			})
 
 			if err != nil || !token.Valid {
-				fmt.Println("[Auth Debug] Invalid token error:", err)
+				log.Println("[Auth Debug] Invalid token error:", err)
 				http.Error(w, "Invalid token", http.StatusUnauthorized)
 				return
 			}

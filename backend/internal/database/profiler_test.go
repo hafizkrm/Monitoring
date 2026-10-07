@@ -32,16 +32,16 @@ func TestDatabaseProfiling(t *testing.T) {
 
 	t.Logf("T0: Global Queries = %d", initialQueries)
 	t.Log("Simulating 100 devices polling cycle...")
-	
+
 	start := time.Now()
 	// Simulate writing metrics for 100 devices
 	for i := 0; i < 100; i++ {
 		metric := &models.DeviceMetric{
-			DeviceID: 9999,
-			CPUUsage: 10.5 + float64(i%10),
+			DeviceID:    9999,
+			CPUUsage:    10.5 + float64(i%10),
 			MemoryUsage: 2048.0,
 			Temperature: 35.0,
-			Uptime: int64(1000 + i),
+			Uptime:      int64(1000 + i),
 		}
 		_, err = db.Exec(
 			"INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, temperature, uptime) VALUES (?, ?, ?, ?, ?)",
@@ -60,7 +60,7 @@ func TestDatabaseProfiling(t *testing.T) {
 		t.Logf("T+End: Global Queries = %d. Diff = %d queries. Took %v", finalQueries, diff, duration)
 		t.Logf("Statements/poll: %.2f", float64(diff)/100.0)
 		t.Logf("Latency/poll: %v", duration/100)
-		
+
 		t.Log("NOTE: These 300+ queries originate from a raw SQL verification harness (db.Exec directly loop 100x), NOT from the production Go application workload.")
 		t.Log("      This is to prove the database is capable of handling the write amplification, but it skips the batching logic in production.")
 

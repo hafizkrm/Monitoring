@@ -11,17 +11,17 @@ import (
 
 	"github.com/hafizkrm/Monitoring/backend/internal/cache"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
-	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 )
 
 type Manager struct {
-	config config.Config
-	logger logger.Logger
-	db     DatabaseClient
-	registry   CollectorRegistry
-	processor  *Processor
-	scheduler  *Scheduler
+	config    config.Config
+	logger    logger.Logger
+	db        DatabaseClient
+	registry  CollectorRegistry
+	processor *Processor
+	scheduler *Scheduler
 
 	workers  int
 	started  atomic.Bool
@@ -35,7 +35,7 @@ type Manager struct {
 	lastUptime map[int]int64
 	mu         sync.RWMutex
 
-	eventPublisher contracts.EventPublisher
+	eventPublisher  contracts.EventPublisher
 	asyncMetricRepo *AsyncMetricsRepo
 }
 
@@ -75,17 +75,17 @@ func NewManager(
 	)
 
 	return &Manager{
-		config:     cfg,
-		logger:     log,
-		db:         db,
-		registry:   registry,
-		processor:  processor,
-		scheduler:  scheduler,
-		workers:    workers,
-		stopChan:   make(chan struct{}),
-		jobQueue:   jobQueue,
-		cb:         NewCircuitBreaker(5, 30*time.Second),
-		lastUptime: map[int]int64{},
+		config:          cfg,
+		logger:          log,
+		db:              db,
+		registry:        registry,
+		processor:       processor,
+		scheduler:       scheduler,
+		workers:         workers,
+		stopChan:        make(chan struct{}),
+		jobQueue:        jobQueue,
+		cb:              NewCircuitBreaker(5, 30*time.Second),
+		lastUptime:      map[int]int64{},
 		asyncMetricRepo: asyncMetricRepo,
 	}
 }
@@ -107,8 +107,14 @@ func (m *Manager) Start(parentCtx context.Context) error {
 		for _, dm := range dbMetrics {
 			idVal := dm["id"]
 			var id int
-			if v, ok := idVal.(float64); ok { id = int(v) } else if v, ok := idVal.(int64); ok { id = int(v) } else if v, ok := idVal.(int); ok { id = v }
-			
+			if v, ok := idVal.(float64); ok {
+				id = int(v)
+			} else if v, ok := idVal.(int64); ok {
+				id = int(v)
+			} else if v, ok := idVal.(int); ok {
+				id = v
+			}
+
 			if id > 0 {
 				existing := cache.GetMetricsCache().GetDevice(id)
 				if existing == nil {
@@ -121,9 +127,13 @@ func (m *Manager) Start(parentCtx context.Context) error {
 					tx, _ := dm["tx_rate"].(float64)
 					rx, _ := dm["rx_rate"].(float64)
 					lat, _ := dm["latency"].(float64)
-					
+
 					var uptime int64
-					if u, ok := dm["uptime"].(float64); ok { uptime = int64(u) } else if u, ok := dm["uptime"].(int64); ok { uptime = u }
+					if u, ok := dm["uptime"].(float64); ok {
+						uptime = int64(u)
+					} else if u, ok := dm["uptime"].(int64); ok {
+						uptime = u
+					}
 
 					cache.GetMetricsCache().Update(&cache.LatestDeviceMetrics{
 						DeviceID:    id,
@@ -274,7 +284,7 @@ func (m *Manager) processJob(
 			_ = m.db.UpdateDeviceStatus(ctxDb, device.ID, "up", "unknown", "degraded")
 			_ = m.db.InsertPollingLog(ctxDb, device.ID, "success", "device recovered (ping ok, circuit reset)", latency)
 			_ = m.db.InsertActivityLog(ctxDb, nil, "System", "RECOVERY", "Monitoring",
-				fmt.Sprintf("[%s] %s - Perangkat kembali online (circuit breaker direset via ping)", device.IPAddress, device.Name),
+				fmt.Sprintf("[%s] %s - Device online again (circuit breaker reset via ping)", device.IPAddress, device.Name),
 				"")
 			cancelDb()
 			// Fall through to normal polling below
@@ -286,9 +296,13 @@ func (m *Manager) processJob(
 			_ = m.db.UpdateDeviceStatus(ctxDb, device.ID, "down", "down", "down") // P1-18: Ensure status matches circuit breaker
 			_ = m.db.InsertPollingLog(ctxDb, device.ID, "error", "device unreachable (circuit broken)", 0)
 			_ = m.db.InsertActivityLog(ctxDb, nil, "System", "DOWNTIME", "Monitoring",
-				fmt.Sprintf("[%s] %s - Perangkat tidak dapat dijangkau (circuit breaker aktif)", device.IPAddress, device.Name),
+				fmt.Sprintf("[%s] %s - Device unreachable (circuit breaker active)", device.IPAddress, device.Name),
 				"")
 			cancelDb()
+
+			// Delegate offline hysteresis to Processor even when circuit is broken
+			m.processor.ProcessOfflineEvent(ctx, *device, "down")
+
 			return
 		}
 	}
@@ -309,10 +323,10 @@ func (m *Manager) processJob(
 		pingCtx, pingCancel := context.WithTimeout(context.Background(), 6*time.Second)
 		defer pingCancel()
 		pingLatency, _, pingLoss, pingErr := collector.GetNetworkStats(pingCtx, device.IPAddress)
-		
+
 		reachability := "down"
 		overallStatus := "down"
-		
+
 		if pingErr == nil && pingLoss < 100 && pingLatency > 0 {
 			reachability = "up"
 			overallStatus = "degraded"
@@ -322,7 +336,7 @@ func (m *Manager) processJob(
 		_ = m.db.UpdateDeviceStatus(ctxDb, device.ID, reachability, "down", overallStatus)
 		_ = m.db.InsertPollingLog(ctxDb, device.ID, "error", fmt.Sprintf("polling failed: %v", err), int(time.Since(start).Milliseconds()))
 		_ = m.db.InsertActivityLog(ctxDb, nil, "System", "DOWNTIME", "Monitoring",
-			fmt.Sprintf("[%s] %s - Polling gagal: %v", device.IPAddress, device.Name, err),
+			fmt.Sprintf("[%s] %s - Polling failed: %v", device.IPAddress, device.Name, err),
 			"")
 		cancelDb()
 
@@ -355,6 +369,9 @@ func (m *Manager) processJob(
 			))
 		}
 
+		// Delegate offline hysteresis to Processor
+		m.processor.ProcessOfflineEvent(ctx, *device, overallStatus)
+
 		return
 	}
 
@@ -363,7 +380,7 @@ func (m *Manager) processJob(
 	if prevFailures >= 3 {
 		ctxDb, cancelDb := context.WithTimeout(context.Background(), 5*time.Second)
 		_ = m.db.InsertActivityLog(ctxDb, nil, "System", "RECOVERY", "Monitoring",
-			fmt.Sprintf("[%s] %s - Perangkat kembali online (recovery)", device.IPAddress, device.Name),
+			fmt.Sprintf("[%s] %s - Device online again (recovery)", device.IPAddress, device.Name),
 			"")
 		cancelDb()
 	}
@@ -379,7 +396,7 @@ func (m *Manager) processJob(
 		ctxDb, cancelDb := context.WithTimeout(context.Background(), 5*time.Second)
 		_ = m.db.InsertPollingLog(ctxDb, device.ID, "error", "device rebooted (uptime reset)", 0)
 		_ = m.db.InsertActivityLog(ctxDb, nil, "System", "REBOOT", "Monitoring",
-			fmt.Sprintf("[%s] %s - Perangkat mengalami reboot (uptime reset)", device.IPAddress, device.Name),
+			fmt.Sprintf("[%s] %s - Device rebooted (uptime reset)", device.IPAddress, device.Name),
 			"")
 		cancelDb()
 	}
@@ -387,6 +404,7 @@ func (m *Manager) processJob(
 	// processor now saves everything internally
 	err = m.processor.ProcessMetrics(
 		ctx,
+		*device,
 		metrics,
 	)
 
@@ -422,13 +440,19 @@ func (m *Manager) processJob(
 			}
 			// Delta checking: Only broadcast if values meaningfully changed
 			diffCPU := existing.CPUUsage - newMetrics.CPUUsage
-			if diffCPU < 0 { diffCPU = -diffCPU }
-			
+			if diffCPU < 0 {
+				diffCPU = -diffCPU
+			}
+
 			diffMem := existing.MemoryUsage - newMetrics.MemoryUsage
-			if diffMem < 0 { diffMem = -diffMem }
-			
+			if diffMem < 0 {
+				diffMem = -diffMem
+			}
+
 			diffLat := float64(existing.Latency) - float64(newMetrics.Latency)
-			if diffLat < 0 { diffLat = -diffLat }
+			if diffLat < 0 {
+				diffLat = -diffLat
+			}
 
 			if existing.Status != newMetrics.Status ||
 				diffCPU > 1.0 ||
@@ -534,8 +558,8 @@ func (m *Manager) startCleanupTask(
 				m.logger.Error(
 					"cleanup task failed",
 					map[string]interface{}{
-						"error": err,
-						"stats": stats,
+						"error":        err,
+						"stats":        stats,
 						"duration_sec": duration,
 					},
 				)
@@ -544,7 +568,7 @@ func (m *Manager) startCleanupTask(
 				m.logger.Info(
 					"cleanup task completed",
 					map[string]interface{}{
-						"stats": stats,
+						"stats":        stats,
 						"duration_sec": duration,
 					},
 				)

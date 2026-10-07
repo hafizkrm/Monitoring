@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -22,15 +22,15 @@ func Migrate(db *sql.DB) error {
 	}
 
 	migrationsDir := "internal/database/migrations"
-	files, err := ioutil.ReadDir(migrationsDir)
+	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		// Fallback for when running from root
 		migrationsDir = "backend/internal/database/migrations"
-		files, err = ioutil.ReadDir(migrationsDir)
+		files, err = os.ReadDir(migrationsDir)
 		if err != nil {
 			// Fallback for Docker deployment where it might be in ./migrations
 			migrationsDir = "migrations"
-			files, err = ioutil.ReadDir(migrationsDir)
+			files, err = os.ReadDir(migrationsDir)
 			if err != nil {
 				return fmt.Errorf("could not read migrations directory, exactly one authoritative migration source is required: %v", err)
 			}
@@ -54,7 +54,7 @@ func Migrate(db *sql.DB) error {
 		}
 
 		log.Printf("Applying migration: %s", file)
-		content, err := ioutil.ReadFile(filepath.Join(migrationsDir, file))
+		content, err := os.ReadFile(filepath.Join(migrationsDir, file))
 		if err != nil {
 			return fmt.Errorf("failed to read migration %s: %w", file, err)
 		}

@@ -10,9 +10,9 @@ import (
 
 // Hub menangani register, unregister client, dan mem-broadcast pesan.
 type Hub struct {
-	clients map[*Client]bool
-	broadcast chan contracts.WSEventEnvelope
-	register chan *Client
+	clients    map[*Client]bool
+	broadcast  chan contracts.WSEventEnvelope
+	register   chan *Client
 	unregister chan *Client
 
 	eventBus     eventbus.EventBus
@@ -37,7 +37,7 @@ func (h *Hub) SetEventBus(eb eventbus.EventBus) {
 
 func (h *Hub) Run() {
 	log.Println("WebSocket Hub is running...")
-	
+
 	if h.eventBus != nil {
 		h.subscribeToDomainEvents()
 	}
@@ -100,8 +100,8 @@ func (h *Hub) subscribeToDomainEvents() {
 	// Phase 3: Prometheus Observability - Export dropped count for WebSocket Hub
 	prometheus.MustRegister(prometheus.NewCounterFunc(
 		prometheus.CounterOpts{
-			Name: "nms_eventbus_dropped_messages_total",
-			Help: "Total dropped messages by eventbus subscriber",
+			Name:        "nms_eventbus_dropped_messages_total",
+			Help:        "Total dropped messages by eventbus subscriber",
 			ConstLabels: prometheus.Labels{"component": "websocket_hub"},
 		},
 		func() float64 {

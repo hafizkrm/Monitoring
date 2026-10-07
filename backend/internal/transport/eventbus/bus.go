@@ -122,7 +122,7 @@ func (b *inMemoryEventBus) Shutdown() {
 			close(sub.Channel)
 		}
 	}
-	
+
 	// Clear the references
 	b.subscribers = make(map[contracts.EventType]map[*Subscriber]struct{})
 }

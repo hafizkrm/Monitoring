@@ -42,7 +42,7 @@ type QueryRangeResponse struct {
 // of all gateway/router/firewall devices over the last 2 hours.
 func (c *PrometheusClient) FetchGlobalBandwidthHistory(ctx context.Context, durationStr string) ([]map[string]interface{}, error) {
 	end := time.Now()
-	
+
 	// Default to 30m if invalid or empty
 	dur, err := time.ParseDuration(durationStr)
 	if err != nil || dur <= 0 {
@@ -96,7 +96,7 @@ func (c *PrometheusClient) FetchGlobalBandwidthHistory(ctx context.Context, dura
 
 				ts := time.Unix(int64(tFloat), 0)
 				timeLabel := ts.Format("15:04:05")
-				
+
 				if _, exists := historyMap[timeLabel]; !exists {
 					historyMap[timeLabel] = map[string]interface{}{
 						"timestamp": timeLabel,

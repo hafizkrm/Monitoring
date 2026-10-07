@@ -118,10 +118,10 @@ func (db *Database) GetAvailabilityReport(ctx context.Context, start time.Time, 
 	}
 
 	summary := map[string]interface{}{
-		"Total Perangkat":   count,
-		"Rata-rata SLA (%)": fmt.Sprintf("%.2f%%", avgAvailability),
-		"SLA Met (Ã¢â€°Â¥99%)":  fmt.Sprintf("%d Perangkat", compliantCount),
-		"SLA Missed (<99%)": fmt.Sprintf("%d Perangkat", violatedCount),
+		"Total Devices":     count,
+		"Average SLA (%)":   fmt.Sprintf("%.2f%%", avgAvailability),
+		"SLA Met (>=99%)":   fmt.Sprintf("%d Devices", compliantCount),
+		"SLA Missed (<99%)": fmt.Sprintf("%d Devices", violatedCount),
 	}
 
 	return map[string]interface{}{
@@ -181,13 +181,13 @@ func (db *Database) GetPerformanceReport(ctx context.Context, start time.Time, e
 	}
 
 	summary := map[string]interface{}{
-		"Total Perangkat": count,
-		"Rata-rata CPU":   "0%",
-		"Rata-rata RAM":   "0%",
+		"Total Devices": count,
+		"Average CPU":   "0%",
+		"Average RAM":   "0%",
 	}
 	if count > 0 {
-		summary["Rata-rata CPU"] = fmt.Sprintf("%.1f%%", sumCpu/float64(count))
-		summary["Rata-rata RAM"] = fmt.Sprintf("%.1f%%", sumRam/float64(count))
+		summary["Average CPU"] = fmt.Sprintf("%.1f%%", sumCpu/float64(count))
+		summary["Average RAM"] = fmt.Sprintf("%.1f%%", sumRam/float64(count))
 	}
 
 	return map[string]interface{}{
@@ -213,7 +213,7 @@ func (db *Database) GetIncidentsReport(ctx context.Context, start time.Time, end
 	rows, err := db.QueryContext(ctx, query, start, end)
 	if err != nil {
 		return map[string]interface{}{
-			"summary": map[string]interface{}{"Total Insiden": 0},
+			"summary": map[string]interface{}{"Total Incidents": 0},
 			"items":   []interface{}{},
 		}, nil
 	}
@@ -250,9 +250,9 @@ func (db *Database) GetIncidentsReport(ctx context.Context, start time.Time, end
 	}
 
 	summary := map[string]interface{}{
-		"Total Insiden Logged": count,
-		"Insiden Critical":     critCount,
-		"Insiden Warning":      warnCount,
+		"Total Incidents Logged": count,
+		"Critical Incidents":     critCount,
+		"Warning Incidents":      warnCount,
 	}
 
 	return map[string]interface{}{
@@ -280,7 +280,7 @@ func (db *Database) GetDownFrequencyReport(ctx context.Context, start time.Time,
 	rows, err := db.QueryContext(ctx, query, start, end)
 	if err != nil {
 		return map[string]interface{}{
-			"summary": map[string]interface{}{"Total Perangkat Terganggu": 0},
+			"summary": map[string]interface{}{"Total Devices Disrupted": 0},
 			"items":   []interface{}{},
 		}, nil
 	}
@@ -313,8 +313,8 @@ func (db *Database) GetDownFrequencyReport(ctx context.Context, start time.Time,
 	}
 
 	summary := map[string]interface{}{
-		"Perangkat Sering Down": len(items),
-		"Total Kejadian Down":   totalDisruptions,
+		"Frequent Down Devices": len(items),
+		"Total Down Events":     totalDisruptions,
 	}
 
 	return map[string]interface{}{
@@ -322,8 +322,6 @@ func (db *Database) GetDownFrequencyReport(ctx context.Context, start time.Time,
 		"items":   items,
 	}, nil
 }
-
-
 
 // GetLogsV2 returns paginated polling logs with status and date range filter support
 func (db *Database) GetLogsV2(ctx context.Context, limit, offset int, search, statusFilter, rangeFilter string) ([]map[string]interface{}, int, error) {
@@ -382,24 +380,17 @@ func (db *Database) GetLogsV2(ctx context.Context, limit, offset int, search, st
 		var durationMs sql.NullFloat64
 		if err := rows.Scan(&createdAt, &name, &ip, &status, &durationMs, &msg); err == nil {
 			items = append(items, map[string]interface{}{
-				"timestamp":     createdAt.Format("2006-01-02 15:04:05"),
-				"created_at":    createdAt.Format("2006-01-02 15:04:05"),
-				"device_name":   name.String,
-				"name":          name.String,
-				"ip_address":    ip.String,
-				"status":        status.String,
-				"duration_ms":   durationMs.Float64,
-				"duration":      durationMs.Float64,
-				"response_time": durationMs.Float64,
-				"message":       msg.String,
-				"error_message": msg.String,
+				"timestamp":   createdAt.Format("2006-01-02 15:04:05"),
+				"device_name": name.String,
+				"ip_address":  ip.String,
+				"status":      status.String,
+				"duration_ms": durationMs.Float64,
+				"message":     msg.String,
 			})
 		}
 	}
 	return items, total, nil
 }
-
-
 
 // GetActivityLogsV2 returns paginated activity logs with range filter support
 func (db *Database) GetActivityLogsV2(ctx context.Context, limit, offset int, search, logType, rangeFilter string) ([]map[string]interface{}, int, error) {
@@ -470,8 +461,6 @@ func (db *Database) GetActivityLogsV2(ctx context.Context, limit, offset int, se
 
 	return items, total, nil
 }
-
-
 
 // InsertActivityLog inserts a new activity log
 func (db *Database) InsertActivityLog(ctx context.Context, userID *int64, user, action, module, description, ipAddress string) error {
@@ -564,28 +553,19 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 
 			items = append(items, map[string]interface{}{
 				"id":           numID,
-				"raw_id":       rawID,
 				"name":         name.String,
-				"ip":           ip.String,
 				"ip_address":   ip.String,
-				"type":         devType.String,
 				"device_type":  devType.String,
 				"status":       st,
 				"cpu_usage":    cpu.Float64,
-				"cpu":          cpu.Float64,
 				"memory_usage": ram.Float64,
-				"memory":       ram.Float64,
-				"ram":          ram.Float64,
 				"latency_ms":   latVal,
-				"latency":      latVal,
 				"jitter_ms":    jitterVal,
-				"jitter":       jitterVal,
 				"packet_loss":  loss.Float64,
 				"tx_rate":      tx.Float64,
 				"rx_rate":      rx.Float64,
 				"uptime":       uptime.Int64,
 				"collected_at": collTime,
-				"updated_at":   collTime,
 			})
 		}
 	}
@@ -657,13 +637,10 @@ func (db *Database) GetMetricsHistoryByDeviceID(ctx context.Context, devID int) 
 			items = append(items, map[string]interface{}{
 				"timestamp":    collectedAt.Format("15:04:05"),
 				"cpu_usage":    cpu.Float64,
-				"cpu":          cpu.Float64,
 				"memory_usage": ram.Float64,
-				"memory":       ram.Float64,
 				"latency_ms":   latency.Float64,
-				"latency":      latency.Float64,
 				"packet_loss":  loss.Float64,
-				"jitter":       jitter.Float64,
+				"jitter_ms":    jitter.Float64,
 				"tx_rate":      tx.Float64,
 				"rx_rate":      rx.Float64,
 			})
@@ -890,7 +867,7 @@ func (db *Database) AddDeviceWithBrand(ctx context.Context, ip, name, devType st
 	var existingName string
 	errCheck := db.QueryRowContext(ctx, `SELECT name FROM devices WHERE ip_address = ? LIMIT 1`, ip).Scan(&existingName)
 	if errCheck == nil {
-		return "", fmt.Errorf("perangkat dengan IP %s sudah terdaftar (%s)", ip, existingName)
+		return "", fmt.Errorf("device with IP %s is already registered (%s)", ip, existingName)
 	}
 
 	vStr := "Generic"
@@ -965,7 +942,6 @@ func (db *Database) AddDeviceWithBrand(ctx context.Context, ip, name, devType st
 					_, _ = db.ExecContext(bgCtx, `UPDATE devices SET vendor = ? WHERE id = ? OR ip_address = ?`, vendor, devID, devIP)
 				}
 			}
-			_ = db.SyncOfflineAlerts(bgCtx)
 		}(insertedID, ip, devType)
 	}
 
@@ -1080,7 +1056,7 @@ func (db *Database) GetPaginatedDevices(ctx context.Context, page, limit int, se
 	if offset < 0 {
 		offset = 0
 	}
-	query := "SELECT d.id, d.name, d.ip_address, d.device_type, d.enabled, d.parent_ip, d.last_polled_at, d.created_at, COALESCE(m.status, d.status, 'up') AS status " + fromClause + whereClause + " ORDER BY d.created_at DESC, d.id DESC LIMIT ? OFFSET ?"
+	query := "SELECT d.id, COALESCE(d.name, '') AS name, COALESCE(d.ip_address, '') AS ip_address, COALESCE(d.device_type, 'router') AS device_type, COALESCE(d.enabled, 1) AS enabled, d.parent_ip, d.last_polled_at, COALESCE(d.created_at, NOW()) AS created_at, COALESCE(m.status, d.status, 'up') AS status " + fromClause + whereClause + " ORDER BY d.created_at DESC, d.id DESC LIMIT ? OFFSET ?"
 	args = append(args, limit, offset)
 
 	rows, err := db.QueryContext(ctx, query, args...)
@@ -1093,9 +1069,10 @@ func (db *Database) GetPaginatedDevices(ctx context.Context, page, limit int, se
 	for rows.Next() {
 		var d models.Device
 		var lastPolled sql.NullTime
+		var createdAt sql.NullTime
 		var parentIP sql.NullString
 		var rawID string
-		if err := rows.Scan(&rawID, &d.Name, &d.IPAddress, &d.DeviceType, &d.Enabled, &parentIP, &lastPolled, &d.CreatedAt, &d.Status); err == nil {
+		if err := rows.Scan(&rawID, &d.Name, &d.IPAddress, &d.DeviceType, &d.Enabled, &parentIP, &lastPolled, &createdAt, &d.Status); err == nil {
 			if pId, pErr := strconv.Atoi(rawID); pErr == nil {
 				d.ID = pId
 			} else {
@@ -1106,6 +1083,9 @@ func (db *Database) GetPaginatedDevices(ctx context.Context, page, limit int, se
 			}
 			if lastPolled.Valid {
 				d.LastPolledAt = &lastPolled.Time
+			}
+			if createdAt.Valid {
+				d.CreatedAt = createdAt.Time
 			}
 			result = append(result, d)
 		} else {
@@ -1354,8 +1334,8 @@ func (db *Database) InsertDeviceMetric(ctx context.Context, metric *models.Devic
 	if lat == 0 {
 		lat = metric.Latency
 	}
-	query := `INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, tx_rate, rx_rate, status, reachability_status, snmp_status, latency, packet_loss, jitter, uptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := db.ExecContext(ctx, query, metric.DeviceID, metric.CPUUsage, metric.MemoryUsage, metric.TxRate, metric.RxRate, st, rSt, sSt, lat, metric.PacketLoss, metric.Jitter, metric.Uptime)
+	query := `INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, tx_rate, rx_rate, status, reachability_status, snmp_status, latency, packet_loss, jitter, uptime, temperature, voltage, signal_strength, ccq, model, memory_total, memory_used, collected_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := db.ExecContext(ctx, query, metric.DeviceID, metric.CPUUsage, metric.MemoryUsage, metric.TxRate, metric.RxRate, st, rSt, sSt, lat, metric.PacketLoss, metric.Jitter, metric.Uptime, metric.Temperature, metric.Voltage, metric.SignalStrength, metric.CCQ, metric.Model, metric.MemoryTotal, metric.MemoryUsed, metric.CollectedAt)
 	return err
 }
 
@@ -1364,7 +1344,7 @@ func (db *Database) BatchInsertDeviceMetrics(ctx context.Context, metrics []*mod
 		return nil
 	}
 
-	query := "INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, tx_rate, rx_rate, status, reachability_status, snmp_status, latency, packet_loss, jitter, uptime) VALUES "
+	query := "INSERT INTO device_metrics (device_id, cpu_usage, memory_usage, tx_rate, rx_rate, status, reachability_status, snmp_status, latency, packet_loss, jitter, uptime, temperature, voltage, signal_strength, ccq, model, memory_total, memory_used, collected_at) VALUES "
 	vals := []interface{}{}
 	placeholders := []string{}
 
@@ -1391,8 +1371,8 @@ func (db *Database) BatchInsertDeviceMetrics(ctx context.Context, metrics []*mod
 			lat = metric.Latency
 		}
 
-		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-		vals = append(vals, metric.DeviceID, metric.CPUUsage, metric.MemoryUsage, metric.TxRate, metric.RxRate, st, rSt, sSt, lat, metric.PacketLoss, metric.Jitter, metric.Uptime)
+		placeholders = append(placeholders, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		vals = append(vals, metric.DeviceID, metric.CPUUsage, metric.MemoryUsage, metric.TxRate, metric.RxRate, st, rSt, sSt, lat, metric.PacketLoss, metric.Jitter, metric.Uptime, metric.Temperature, metric.Voltage, metric.SignalStrength, metric.CCQ, metric.Model, metric.MemoryTotal, metric.MemoryUsed, metric.CollectedAt)
 	}
 
 	query += strings.Join(placeholders, ",")
@@ -1525,65 +1505,6 @@ func (db *Database) CreateAlert(ctx context.Context, incidentID interface{}, ale
 	return err
 }
 
-func (db *Database) SyncOfflineAlerts(ctx context.Context) error {
-	query := `
-		SELECT d.id, COALESCE(NULLIF(d.name, ''), NULLIF(d.hostname, ''), 'Unknown') as name, COALESCE(d.ip_address, '') as ip_address, LOWER(COALESCE(m.status, d.status, '')) as status, COALESCE(m.latency_ms, 0) as latency_ms
-		FROM devices d
-		LEFT JOIN (
-			SELECT dm.*
-			FROM device_metrics dm
-			INNER JOIN (
-				SELECT device_id, MAX(id) AS max_id
-				FROM device_metrics
-				WHERE collected_at >= NOW() - INTERVAL 1 HOUR
-				GROUP BY device_id
-			) latest ON dm.id = latest.max_id
-		) m ON d.id = m.device_id
-		WHERE COALESCE(d.enabled, 1) = 1
-	`
-	rows, err := db.QueryContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var rawID, name, ip, status string
-		var latencyMs int
-		if err := rows.Scan(&rawID, &name, &ip, &status, &latencyMs); err == nil {
-			var numericID int
-			if pId, pErr := strconv.Atoi(rawID); pErr == nil {
-				numericID = pId
-			} else {
-				numericID = int(crc32.ChecksumIEEE([]byte(rawID)) & 0x7fffffff)
-			}
-
-			isOffline := status != "up" && status != "online" && status != "success" && status != "ok" && status != "reachable" && status != "1" && status != "active" && latencyMs <= 0
-
-			if isOffline {
-				// Check if active incident already exists for this device
-				var count int
-				_ = db.QueryRowContext(ctx, `SELECT COUNT(*) FROM incidents WHERE device_id = ? AND type = 'offline' AND status = 'active'`, numericID).Scan(&count)
-				if count == 0 {
-					incID, err := db.CreateIncident(ctx, numericID, "offline", fmt.Sprintf("Perangkat %s (%s) dalam status OFFLINE", name, ip))
-					if err == nil && incID > 0 {
-						_ = db.CreateAlert(ctx, incID, "danger", fmt.Sprintf("Perangkat %s (%s) terdeteksi OFFLINE", name, ip))
-					}
-				}
-			} else {
-				// If device is online/up, resolve active offline incident and clear active alerts
-				_ = db.ResolveIncident(ctx, numericID, "offline")
-				_, _ = db.ExecContext(ctx, `UPDATE alerts SET is_read = 1 WHERE incident_id IN (SELECT id FROM incidents WHERE device_id = ? AND type = 'offline')`, numericID)
-				if ip != "" {
-					_, _ = db.ExecContext(ctx, `UPDATE incidents SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP WHERE (description LIKE CONCAT('%', ?, '%') OR device_id = ?) AND type = 'offline' AND status = 'active'`, ip, numericID)
-					_, _ = db.ExecContext(ctx, `UPDATE alerts SET is_read = 1 WHERE message LIKE CONCAT('%', ?, '%')`, ip)
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (db *Database) CleanupOldData(ctx context.Context, metricsDays int, logsDays int) (map[string]int64, error) {
 	// P1-14 / P0-15: Retention Optimization - Batched Deletes
 	// Prevent database locking and transaction log explosion by deleting in chunks
@@ -1669,12 +1590,14 @@ func (db *Database) GetGlobalBandwidthHistory(ctx context.Context, durationStr s
 	if err != nil || dur <= 0 {
 		dur = 30 * time.Minute
 	}
-	
+
 	intervalHours := int(dur.Hours())
 	if intervalHours == 0 {
 		intervalHours = 1 // At least 1 hour for DB interval if < 1h
 	}
-	if intervalHours < 1 { intervalHours = 1 } // Safe check
+	if intervalHours < 1 {
+		intervalHours = 1
+	} // Safe check
 
 	// Determine grouping divisor to avoid too many points
 	var divisor int = 10

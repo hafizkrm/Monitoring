@@ -43,7 +43,7 @@ func TestDeleteDeviceHandler(t *testing.T) {
 	// 5. Delete alerts and incidents
 	mock.ExpectExec("DELETE FROM alerts").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec("DELETE FROM incidents").WillReturnResult(sqlmock.NewResult(1, 1))
-	
+
 	// 6. Delete fallback device_metrics
 	mock.ExpectExec("DELETE FROM device_metrics").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec("DELETE FROM interface_metrics").WillReturnResult(sqlmock.NewResult(1, 1))

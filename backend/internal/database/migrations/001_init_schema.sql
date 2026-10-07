@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS device_metrics (
   memory_total BIGINT COMMENT 'Total memory in bytes',
   memory_used BIGINT COMMENT 'Used memory in bytes',
   uptime BIGINT COMMENT 'Device uptime in seconds',
-  status ENUM('up', 'down') DEFAULT 'down' COMMENT 'Device status',
+  status VARCHAR(50) DEFAULT 'down' COMMENT 'Device status',
   
   -- Timestamps
   collected_at TIMESTAMP NOT NULL COMMENT 'Time data was collected',
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS interface_metrics (
   -- Interface Info
   interface_index INT COMMENT 'SNMP interface index',
   interface_name VARCHAR(255) COMMENT 'Interface name (e.g., eth0, ge-0/0/0)',
-  interface_status ENUM('up', 'down') DEFAULT 'down' COMMENT 'Interface status',
+  interface_status VARCHAR(50) DEFAULT 'down' COMMENT 'Interface status',
   
   -- Traffic Data
   in_octets BIGINT COMMENT 'Bytes received',
@@ -117,8 +117,8 @@ CREATE TABLE IF NOT EXISTS device_status_history (
   device_id INT NOT NULL COMMENT 'Reference to device',
   
   -- Status Change
-  status_before ENUM('up', 'down', 'unknown') COMMENT 'Previous status',
-  status_after ENUM('up', 'down', 'unknown') COMMENT 'New status',
+  status_before VARCHAR(50) COMMENT 'Previous status',
+  status_after VARCHAR(50) COMMENT 'New status',
   
   -- Details
   reason VARCHAR(500) COMMENT 'Reason for status change',

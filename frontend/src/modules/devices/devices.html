@@ -7,8 +7,8 @@
                         <i class="fas fa-network-wired"></i>
                     </div>
                     <div>
-                        <h2 style="font-family: 'Inter',sans-serif;" class="inline-util-30">Manajemen Perangkat</h2>
-                        <span style="font-family: 'Inter',sans-serif;" class="inline-util-31">Kelola dan pantau seluruh perangkat jaringan yang terdaftar</span>
+                        <h2 style="font-family: 'Inter',sans-serif;" class="inline-util-30">Device Management</h2>
+                        <span style="font-family: 'Inter',sans-serif;" class="inline-util-31">Manage and monitor all registered network devices</span>
                     </div>
                 </div>
                 <!-- Summary Quick Stats -->
@@ -42,7 +42,7 @@
                             <span id="device-table-count-badge" style="font-size: 12px; font-weight: 500; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 8px; border-radius: 12px; margin-left: 8px; display: none;"></span>
                         </h2>
                         <div class="mon-filter-bar" id="mon-device-filter-bar">
-                            <button class="mon-filter-chip active" onclick="monFilterTable('Semua', this)">Semua <span class="chip-count" id="count-chip-semua"></span></button>
+                            <button class="mon-filter-chip active" onclick="monFilterTable('All', this)">All <span class="chip-count" id="count-chip-semua"></span></button>
                             <button class="mon-filter-chip" onclick="monFilterTable('Router', this)">Router <span class="chip-count" id="count-chip-router"></span></button>
                             <button class="mon-filter-chip" onclick="monFilterTable('Radio', this)">Radio <span class="chip-count" id="count-chip-radio"></span></button>
                             <button class="mon-filter-chip" onclick="monFilterTable('Access Point', this)">Access Point <span class="chip-count" id="count-chip-ap"></span></button>
@@ -54,8 +54,10 @@
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <div class="search-container" style="width: 250px; position: relative;">
                             <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none; z-index: 2;"></i>
-                            <input type="text" id="search-devices" placeholder="Cari perangkat..." class="search-input" style="padding-left: 38px; padding-right: 32px;" aria-label="Cari Perangkat">
-                            <i class="fas fa-times-circle" id="clear-search-devices" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; cursor: pointer; display: none; z-index: 2;" title="Hapus pencarian" role="button" tabindex="0" aria-label="Hapus Pencarian"></i>
+                            <input type="text" id="search-devices" placeholder="Search devices... (Esc)" class="search-input" style="padding-left: 38px; padding-right: 36px;" aria-label="Search Devices">
+                            <button type="button" id="clear-search-devices" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #94a3b8; border-radius: 50%; width: 20px; height: 20px; padding: 0; margin: 0; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; line-height: 1; outline: none; z-index: 5; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" title="Clear search (Esc)" aria-label="Clear Search">
+                                <i class="fas fa-times" style="display: flex; align-items: center; justify-content: center; line-height: 1; pointer-events: none;"></i>
+                            </button>
                         </div>
                         <button class="btn-secondary-Action" onclick="fetchDevicesTable()" title="Refresh Data" aria-label="Refresh Data" style="padding: 9px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; transition: all 0.2s;">
                             <i class="fas fa-sync-alt" id="refresh-devices-icon"></i>
@@ -64,7 +66,7 @@
                             <i class="fas fa-file-csv"></i> Export
                         </button>
                         <button id="btn-add-device" class="btn-add-device-header" onclick="openAddDeviceModal()">
-                            <i class="fas fa-plus"></i> Tambah Perangkat
+                            <i class="fas fa-plus"></i> Add Device
                         </button>
                     </div>
                 </div>
@@ -72,22 +74,22 @@
                     <table class="mon-table" id="mon-device-table">
                         <thead>
                             <tr>
-                                <th onclick="handleDeviceSort('name')" style="cursor: pointer; User-select: none;" title="Klik untuk mengurutkan">
-                                    Nama Perangkat <i class="fas fa-sort sort-icon" id="sort-icon-name" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
+                                <th onclick="handleDeviceSort('name')" style="cursor: pointer; User-select: none;" title="Click to sort">
+                                    Device Name <i class="fas fa-sort sort-icon" id="sort-icon-name" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
                                 </th>
-                                <th onclick="handleDeviceSort('device_type')" style="cursor: pointer; User-select: none;" title="Klik untuk mengurutkan">
+                                <th onclick="handleDeviceSort('device_type')" style="cursor: pointer; User-select: none;" title="Click to sort">
                                     Type <i class="fas fa-sort sort-icon" id="sort-icon-device_type" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
                                 </th>
-                                <th onclick="handleDeviceSort('ip_address')" style="cursor: pointer; User-select: none;" title="Klik untuk mengurutkan">
+                                <th onclick="handleDeviceSort('ip_address')" style="cursor: pointer; User-select: none;" title="Click to sort">
                                     IP Address <i class="fas fa-sort sort-icon" id="sort-icon-ip_address" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
                                 </th>
-                                <th onclick="handleDeviceSort('upTime')" style="cursor: pointer; User-select: none;" title="Klik untuk mengurutkan">
+                                <th onclick="handleDeviceSort('upTime')" style="cursor: pointer; User-select: none;" title="Click to sort">
                                     UpTime <i class="fas fa-sort sort-icon" id="sort-icon-upTime" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
                                 </th>
-                                <th onclick="handleDeviceSort('Status')" style="cursor: pointer; User-select: none;" title="Klik untuk mengurutkan">
+                                <th onclick="handleDeviceSort('Status')" style="cursor: pointer; User-select: none;" title="Click to sort">
                                     Status <i class="fas fa-sort sort-icon" id="sort-icon-Status" style="margin-left: 4px; opacity: 0.4; font-size: 11px;"></i>
                                 </th>
-                                <th style="text-align: right;">Action</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="devices-module-table-body">
@@ -98,22 +100,22 @@
                 <div id="devices-module-pagination" style="margin-top: 16px; width: 100%;"></div>
             </div>
         </div>
-<!-- Tambah Perangkat Modal -->
+<!-- Add Device Modal -->
     <div class="modal-overlay modal-overlay-bg" id="add-device-modal" style="display: none;">
         <div class="modal-box">
             <div class="modal-header">
-                <h2>Tambah Perangkat Baru</h2>
+                <h2>Add New Device</h2>
                 <button id="close-modal" aria-label="Close modal" class="btn-close-modal"><i class="fas fa-times"></i></button>
             </div>
             <form id="add-device-form">
                 <div class="inline-util-39">
-                    <label for="device-name" class="inline-util-16">Nama Perangkat</label>
-                    <input type="text" id="device-name" required placeholder="Contoh: Router Utama" class="form-control">
+                    <label for="device-name" class="inline-util-16">Device Name</label>
+                    <input type="text" id="device-name" required placeholder="e.g. Core Router" class="form-control">
                 </div>
                 <div class="inline-util-39">
-                    <label for="device-category" class="inline-util-16">Kategori Perangkat</label>
-                    <select id="device-category" aria-label="Kategori Perangkat" required class="form-control" style="appearance: auto;">
-                        <option value="" disabled selected>Pilih Kategori</option>
+                    <label for="device-category" class="inline-util-16">Device Category</label>
+                    <select id="device-category" aria-label="Device Category" required class="form-control" style="appearance: auto;">
+                        <option value="" disabled selected>Select Category</option>
                         <option value="router">Router</option>
                         <option value="radio">Radio</option>
                         <option value="access_point">Access Point (Auto-Detect Vendor)</option>
@@ -124,7 +126,7 @@
                 </div>
                 <div class="inline-util-32">
                     <label for="device-ip" class="inline-util-16">IP Address</label>
-                    <input type="text" id="device-ip" required placeholder="Contoh: 192.168.1.1" class="form-control">
+                    <input type="text" id="device-ip" required placeholder="e.g. 192.168.1.1" class="form-control">
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="Cancel-modal" class="btn-secondary">Cancel</button>

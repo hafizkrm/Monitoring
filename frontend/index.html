@@ -71,46 +71,47 @@
         </div>
 
         <div class="nav-section">
-            <div class="nav-title">Menu Utama</div>
+            <div class="nav-title">Main Menu</div>
             <ul class="nav-menu">
                 <li class="nav-item active" data-view="dashboard" role="button" tabindex="0">
                     <i class="fas fa-th-large"></i> Dashboard
                 </li>
                 <li class="nav-item" data-view="devices" role="button" tabindex="0">
-                    <i class="fas fa-network-wired"></i> Perangkat
+                    <i class="fas fa-network-wired"></i> Devices
+                    <span id="sidebar-device-badge" class="premium-sidebar-badge blue" style="display: none;"></span>
                 </li>
                 <li class="nav-item" data-view="alerts" role="button" tabindex="0">
-                    <i class="fas fa-bell"></i> Peringatan & Notifikasi
+                    <i class="fas fa-bell"></i> Alerts & Notifications
                     <span id="sidebar-alert-badge" class="premium-sidebar-badge red" style="display: none;"></span>
                 </li>
                 <li class="nav-item" data-view="reports" role="button" tabindex="0">
-                    <i class="fas fa-chart-bar"></i> Laporan
+                    <i class="fas fa-chart-bar"></i> Reports
                 </li>
                 <li class="nav-item" data-view="logs" role="button" tabindex="0">
-                    <i class="fas fa-history"></i> Log Aktivitas
+                    <i class="fas fa-history"></i> Activity Logs
                 </li>
             </ul>
         </div>
 
         <div class="nav-section">
-            <div class="nav-title">Sistem</div>
+            <div class="nav-title">System</div>
             <ul class="nav-menu">
                 <li class="nav-item" data-view="settings" role="button" tabindex="0">
-                    <i class="fas fa-cog"></i> Pengaturan
+                    <i class="fas fa-cog"></i> Settings
                 </li>
                 <li class="nav-item" data-view="users" role="button" tabindex="0">
-                    <i class="fas fa-users"></i> Pengguna
+                    <i class="fas fa-users"></i> User Management
                 </li>
                 <li class="nav-item" data-view="integration" role="button" tabindex="0">
-                    <i class="fas fa-puzzle-piece"></i> Integrasi
+                    <i class="fas fa-puzzle-piece"></i> Integrations
                     <span class="premium-sidebar-badge purple">PRO</span>
                 </li>
                 <li class="nav-item" data-view="backup" role="button" tabindex="0">
-                    <i class="fas fa-cloud-upload-alt"></i> Pencadangan & Pemulihan
+                    <i class="fas fa-cloud-upload-alt"></i> Backup & Recovery
                     <span class="premium-sidebar-badge purple">PRO</span>
                 </li>
                 <li class="nav-item" data-view="docs" role="button" tabindex="0">
-                    <i class="fas fa-book"></i> Dokumentasi
+                    <i class="fas fa-book"></i> Documentation
                 </li>
             </ul>
         </div>
@@ -118,14 +119,14 @@
         <div class="sidebar-footer">
             <div class="server-status" id="sidebar-server-status">
                 <div class="flex items-center gap-2">
-                    <i class="live-dot"></i> Pemantauan Server
+                    <i class="live-dot"></i> Server Health
                 </div>
                 <span class="status-text mt-1">Online</span>
             </div>
             <div class="server-info">
-                <div><i class="fas fa-info-circle"></i> Versi<br><span>v1.0</span></div>
+                <div><i class="fas fa-info-circle"></i> Version<br><span>v1.0</span></div>
             </div>
-            <button class="premium-btn-danger btn-logout" style="cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+            <button class="premium-btn-danger btn-logout" style="cursor: pointer;"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
         </div>
     </aside>
 
@@ -142,11 +143,10 @@
                         <h2 id="view-title"
                             style="margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             Dashboard </h2>
-                        <span id="view-subtitle" class="inline-util-1" style="display: block;">Monitoring jaringan
-                            secara real-time</span>
+                        <span id="view-subtitle" class="inline-util-1" style="display: block;">Real-time Network Infrastructure Monitoring</span>
                         <span id="view-creator" class="inline-util-3"
-                            style="display: block; color: var(--accent-blue); font-size: 11px; font-weight: 500;">Dibuat
-                            oleh hafizkrm</span>
+                            style="display: block; color: var(--accent-blue); font-size: 11px; font-weight: 500;">Created
+                            by hafizkrm</span>
                     </div>
                 </div>
             </div>
@@ -271,7 +271,7 @@
                     </div>
                     <div class="ds-title">
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <h3 id="ds-name" style="margin:0;">Nama Perangkat</h3>
+                            <h3 id="ds-name" style="margin:0; font-size: 16px; font-weight: 700; color: var(--text-main);">Device Name</h3>
                             <span id="ds-vendor-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">GENERIC</span>
                         </div>
                         <span id="ds-ip" style="font-family: monospace; font-size: 12px; color: var(--text-muted);">192.168.1.1</span>
@@ -283,7 +283,7 @@
             </div>
             <div class="ds-status-bar" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <div id="ds-status-badge" class="badge online">
-                    <span class="pulsing-dot"></span>AKTIF
+                    <span class="pulsing-dot"></span>ONLINE
                 </div>
                 <div class="uptime-text" id="ds-uptime">
                     <i class="far fa-clock"></i> 00:00:00
@@ -294,7 +294,10 @@
         <div class="device-sidebar-content" style="overflow-y: auto; padding: 16px;">
             <!-- Connection Quality KPI Bar -->
             <div class="ds-section">
-                <h4 class="ds-section-title"><i class="fas fa-network-wired" style="margin-right: 6px; color: var(--accent-cyan);"></i> Kualitas Koneksi (Ping)</h4>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h4 class="ds-section-title" style="margin: 0;"><i class="fas fa-network-wired" style="margin-right: 6px; color: var(--accent-cyan);"></i> Connection Health (Ping)</h4>
+                    <span id="ds-sla-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">SLA Excellent</span>
+                </div>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 8px; border-radius: 8px; text-align: center;">
                         <span style="font-size: 10px; color: var(--text-muted); display: block;">Latency</span>
@@ -313,19 +316,23 @@
 
             <!-- CPU & RAM Section -->
             <div class="ds-section">
-                <h4 class="ds-section-title"><i class="fas fa-microchip" style="margin-right: 6px; color: var(--accent-blue);"></i> Sumber Daya Sistem</h4>
+                <h4 class="ds-section-title"><i class="fas fa-microchip" style="margin-right: 6px; color: var(--accent-blue);"></i> Hardware Resources</h4>
                 <div class="ds-resource-grid">
                     <div class="ds-resource-box">
-                        <span class="ds-label">Penggunaan CPU</span>
-                        <span class="ds-value" id="ds-cpu-val">0%</span>
-                        <div class="progress-bar-bg">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="ds-label">CPU Load</span>
+                            <span class="ds-value" id="ds-cpu-val">0%</span>
+                        </div>
+                        <div class="progress-bar-bg" style="margin-top: 6px;">
                             <div class="progress-bar-fill" id="ds-cpu-bar" style="width: 0%; background: var(--accent-blue);"></div>
                         </div>
                     </div>
-                    <div class="ds-resource-box">
-                        <span class="ds-label">Penggunaan Memori</span>
-                        <span class="ds-value" id="ds-ram-val">0%</span>
-                        <div class="progress-bar-bg">
+                    <div class="ds-resource-box" style="margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="ds-label">Memory Usage</span>
+                            <span class="ds-value" id="ds-ram-val">0%</span>
+                        </div>
+                        <div class="progress-bar-bg" style="margin-top: 6px;">
                             <div class="progress-bar-fill" id="ds-ram-bar" style="width: 0%; background: var(--accent-green);"></div>
                         </div>
                     </div>
@@ -339,27 +346,27 @@
             
             <!-- Network Interfaces Section -->
             <div class="ds-section" id="ds-interfaces-section">
-                <h4 class="ds-section-title"><i class="fas fa-ethernet" style="margin-right: 6px; color: var(--accent-purple);"></i> Antarmuka Jaringan</h4>
+                <h4 class="ds-section-title"><i class="fas fa-ethernet" style="margin-right: 6px; color: var(--accent-purple);"></i> Network Interfaces</h4>
                 <div id="ds-interfaces-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-muted);">
-                    <div style="text-align: center; padding: 12px; opacity: 0.6;"><i class="fas fa-spinner fa-spin"></i> Memuat port interface...</div>
+                    <div style="text-align: center; padding: 12px; opacity: 0.6;"><i class="fas fa-spinner fa-spin"></i> Loading interfaces...</div>
                 </div>
             </div>
 
             <!-- Actions Section -->
             <div class="ds-section">
-                <h4 class="ds-section-title"><i class="fas fa-tools" style="margin-right: 6px; color: var(--accent-orange);"></i> Aksi Diagnostik Cepat</h4>
+                <h4 class="ds-section-title"><i class="fas fa-tools" style="margin-right: 6px; color: var(--accent-orange);"></i> Quick Diagnostics</h4>
                 <div class="ds-action-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                    <button class="btn-action" onclick="if(window.runPing) window.runPing(document.getElementById('ds-ip').innerText)" style="padding: 8px; font-size: 12px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fas fa-terminal"></i> Tes Ping
+                    <button class="btn-action" id="ds-btn-ping" style="padding: 8px; font-size: 12px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-terminal"></i> Test Ping
                     </button>
-                    <button class="btn-action" onclick="if(window.runTrace) window.runTrace(document.getElementById('ds-ip').innerText)" style="padding: 8px; font-size: 12px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.25); color: #c084fc; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fas fa-route"></i> Lacak Rute
+                    <button class="btn-action" id="ds-btn-trace" style="padding: 8px; font-size: 12px; background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.25); color: #c084fc; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-route"></i> Trace Route
                     </button>
-                    <button class="btn-action" onclick="if(window.editDevice) window.editDevice(document.getElementById('ds-ip').innerText, document.getElementById('ds-name').innerText, 'Router', '')" style="padding: 8px; font-size: 12px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fas fa-edit"></i> Edit Perangkat
+                    <button class="btn-action" id="ds-btn-edit" style="padding: 8px; font-size: 12px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-edit"></i> Edit Device
                     </button>
-                    <button class="btn-action btn-danger" onclick="if(window.deleteDevice) window.deleteDevice(document.getElementById('ds-ip').innerText, document.getElementById('ds-name').innerText)" style="padding: 8px; font-size: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <i class="fas fa-trash"></i> Hapus
+                    <button class="btn-action btn-danger" id="ds-btn-delete" style="padding: 8px; font-size: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
             </div>

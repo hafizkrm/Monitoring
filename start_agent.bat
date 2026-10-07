@@ -4,8 +4,8 @@ cls
 
 rem Otomatis mendeteksi direktori projek meskipun script dipindahkan ke Desktop
 set "PROJECT_DIR=%~dp0"
-if not exist "%PROJECT_DIR%config\config.yaml" (
-    if exist "c:\xampp\htdocs\monitoring-network\config\config.yaml" (
+if not exist "%PROJECT_DIR%backend\config.yaml" (
+    if exist "c:\xampp\htdocs\monitoring-network\backend\config.yaml" (
         set "PROJECT_DIR=c:\xampp\htdocs\monitoring-network\"
     )
 )
@@ -20,9 +20,9 @@ echo [INFO] Direktori Projek: %CD%
 echo.
 
 rem 1. Validasi file konfigurasi
-if not exist "config\config.yaml" (
-    echo [ERROR] File konfigurasi "config\config.yaml" tidak ditemukan!
-    echo        Lokasi yang diperiksa: %CD%\config\config.yaml
+if not exist "backend\config.yaml" (
+    echo [ERROR] File konfigurasi "backend\config.yaml" tidak ditemukan!
+    echo        Lokasi yang diperiksa: %CD%\backend\config.yaml
     echo Harap pastikan folder projek monitoring-network berada di lokasi yang tepat.
     echo.
     pause
@@ -56,19 +56,19 @@ if %ERRORLEVEL%==0 (
     echo       Go compiler tidak ditemukan. Menggunakan biner build\nms-agent.exe yang ada.
 )
 
-rem 5. Kompilasi otomatis untuk frontend
-echo [3/5] Memeriksa dan memperbarui build frontend...
-where npm >nul 2>&1
-if %ERRORLEVEL%==0 (
-    echo       Membangun frontend terbaru...
-    pushd "%CD%\frontend"
-    call npm install >nul 2>&1
-    call npm run build >nul 2>&1
-    popd
-    echo       [OK] Frontend ter-update.
-) else (
-    echo       NPM tidak ditemukan. Menggunakan frontend/dist yang ada.
-)
+rem 5. Kompilasi otomatis untuk frontend (Dinonaktifkan agar startup cepat)
+echo [3/5] Melewati build frontend (gunakan npm run build secara manual jika perlu)...
+rem where npm >nul 2>&1
+rem if %ERRORLEVEL%==0 (
+rem     echo       Membangun frontend terbaru...
+rem     pushd "%CD%\frontend"
+rem     call npm install >nul 2>&1
+rem     call npm run build >nul 2>&1
+rem     popd
+rem     echo       [OK] Frontend ter-update.
+rem ) else (
+rem     echo       NPM tidak ditemukan. Menggunakan frontend/dist yang ada.
+rem )
 
 rem 6. Validasi keberadaan biner nms-agent.exe
 if not exist "build\nms-agent.exe" (
@@ -82,8 +82,8 @@ rem 7. Jalankan Prometheus TSDB di background (jika tersedia)
 echo [4/5] Menjalankan Prometheus TSDB...
 if exist "prometheus\prometheus.exe" (
     if exist "prometheus.yml" (
-        start "Prometheus TSDB" /MIN "%CD%\prometheus\prometheus.exe" --config.file="%CD%\prometheus.yml" --storage.tsdb.retention.time=15d --web.listen-address=:9090
-        echo       [OK] Prometheus TSDB berjalan di http://localhost:9090
+        start /B "Prometheus TSDB" "%CD%\prometheus\prometheus.exe" --config.file="%CD%\prometheus.yml" --storage.tsdb.retention.time=15d --web.listen-address=:9090 > prometheus.log 2>&1
+        echo       [OK] Prometheus TSDB berjalan di background pada http://localhost:9090
     ) else (
         echo       [SKIP] prometheus.yml tidak ditemukan, TSDB dilewati.
     )
@@ -100,7 +100,9 @@ echo  Prometheus TSDB tersedia di:   http://localhost:9090
 echo ========================================================
 echo.
 
-"%CD%\build\nms-agent.exe" -config "%CD%\config\config.yaml"
+pushd "%CD%\backend"
+"..\build\nms-agent.exe" -config "config.yaml"
+popd
 
 rem 9. Cleanup Otomatis Saat Agent Berhenti dan Jendela Ditutup
 echo.

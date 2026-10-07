@@ -43,7 +43,7 @@ async function fetchTopInterfaces() {
         renderTopInterfaces();
     } catch (err) {
         console.error('Failed to fetch top interfaces:', err);
-        container.innerHTML = '<div style="font-size:12px; color:var(--accent-red); text-align:center; padding:15px;">Gagal memuat data</div>';
+        container.innerHTML = '<div style="font-size:12px; color:var(--accent-red); text-align:center; padding:15px;">Failed to load data</div>';
     }
 }
 
@@ -52,7 +52,7 @@ function renderTopInterfaces() {
     if (!container) return;
 
     if (!cachedTopInterfacesData || cachedTopInterfacesData.length === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:15px;">Belum ada data metrik interface</div>';
+        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:15px;">No interface metric data available</div>';
         return;
     }
 
@@ -94,7 +94,7 @@ function renderTopInterfaces() {
         const txValRaw = parseFloat(iface.tx_mbps || iface.tx_rate || 0);
         const totalBw = rxValRaw + txValRaw;
 
-        let deviceTitle = iface.device_name || iface.ip_address || 'Perangkat';
+        let deviceTitle = iface.device_name || iface.ip_address || 'Device';
         const ifName = (iface.interface_name || '').trim();
         const ifAlias = (iface.interface_alias || '').trim();
 

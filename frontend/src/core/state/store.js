@@ -75,6 +75,6 @@ export const metricsStore = new Store({
 });
 
 export const uiStore = new Store({
-    deviceFilter: 'Semua', // Kategori perangkat aktif ('Semua', 'Router', 'Switch', dll)
+    deviceFilter: 'All', // Active device category ('All', 'Router', 'Switch', etc.)
     activeView: 'dashboard'
 });

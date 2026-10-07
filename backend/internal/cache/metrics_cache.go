@@ -62,6 +62,18 @@ func (c *MetricsCache) GetDevice(deviceID int) *LatestDeviceMetrics {
 	return nil
 }
 
+func (c *MetricsCache) GetDeviceByIP(ip string) *LatestDeviceMetrics {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for _, m := range c.metrics {
+		if m.IPAddress == ip {
+			copy := *m
+			return &copy
+		}
+	}
+	return nil
+}
+
 func (c *MetricsCache) GetAll() []map[string]interface{} {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

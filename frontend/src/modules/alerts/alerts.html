@@ -1,58 +1,93 @@
-<div id="view-alerts" class="content-section inline-util-15" >
+<div id="view-alerts" class="content-section inline-util-15">
 
-            <!-- ── Page Header ── -->
-            <div class="mon-page-header inline-util-28" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                <div class="inline-util-29">
-                    <div class="page-header-icon orange">
-                        <i class="fas fa-bell"></i>
-                    </div>
-                    <div>
-                        <h2 style="font-family:'Inter',sans-serif;" class="inline-util-30">Alert &amp; Notifikasi</h2>
-                        <span style="font-family:'Inter',sans-serif;" class="inline-util-31">Pantau peringatan dan Status gangguan pada perangkat jaringan Anda</span>
-                    </div>
-                </div>
-                <!-- Summary Quick Stats -->
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 8px;">
-                        <i class="fas fa-bell" style="color: var(--accent-orange); font-size: 13px;"></i>
-                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Total Alert:</span>
-                        <strong id="alert-summary-total" style="font-size: 13px; color: var(--text-main);">0</strong>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
-                        <i class="fas fa-exclamation-circle" style="color: var(--accent-red); font-size: 13px;"></i>
-                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Kritis:</span>
-                        <strong id="alert-summary-critical" style="font-size: 13px; color: var(--accent-red);">0</strong>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px;">
-                        <i class="fas fa-exclamation-triangle" style="color: var(--accent-orange); font-size: 13px;"></i>
-                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Peringatan:</span>
-                        <strong id="alert-summary-warning" style="font-size: 13px; color: var(--accent-orange);">0</strong>
-                    </div>
+    <!-- ── Page Header ── -->
+    <div class="mon-page-header inline-util-28" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+        <div class="inline-util-29">
+            <div class="page-header-icon orange" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-red); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);">
+                <i class="fas fa-shield-virus"></i>
+            </div>
+            <div>
+                <h2 style="font-family:'Inter',sans-serif; font-size: 20px; font-weight: 700; color: var(--text-main);" class="inline-util-30">NOC Incident &amp; Alert Center</h2>
+                <span style="font-family:'Inter',sans-serif; font-size: 12px; color: var(--text-muted);" class="inline-util-31">Live Incident Correlation, Outage SLA Tracker &amp; Real-time Alarm Engine</span>
+            </div>
+        </div>
+
+        <!-- Summary Quick Stats Cards (Interactive Filters) -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="alert-summary-filter-bar">
+            <div class="summary-filter-card active" id="card-alert-all" onclick="window.monFilterAlerts('All', this)" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; opacity: 1;">
+                <i class="fas fa-bell" style="color: var(--accent-blue); font-size: 14px;"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Incidents</span>
+                    <strong id="alert-summary-total" style="font-size: 15px; color: var(--text-main);">0</strong>
                 </div>
             </div>
-
-            <!-- ── Alert Card ── -->
-            <div class="card" style="padding:0; overflow:hidden;">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-color); flex-wrap:wrap; gap:12px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:28px; height:28px; background:rgba(239,68,68,0.1); border-radius:7px; display:flex; align-items:center; justify-content:center; color:var(--accent-red); font-size:13px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <h2 class="card-title" style="margin:0; font-family:'Inter',sans-serif;">Daftar Alert &amp; Peringatan</h2>
-                    </div>
-                    <div class="mon-filter-bar" id="alert-filter-bar" style="margin:0; gap:6px;">
-                        <button class="mon-filter-chip active" id="chip-alert-all" onclick="window.monFilterAlerts('Semua', this)">Semua</button>
-                        <button class="mon-filter-chip" id="chip-alert-critical" onclick="window.monFilterAlerts('Critical', this)">🔴 Critical</button>
-                        <button class="mon-filter-chip" id="chip-alert-warning" onclick="window.monFilterAlerts('Warning', this)">🟡 Warning</button>
-                    </div>
+            <div class="summary-filter-card" id="card-alert-critical" onclick="window.monFilterAlerts('Critical', this)" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; opacity: 0.5;">
+                <i class="fas fa-exclamation-circle" style="color: var(--accent-red); font-size: 14px;"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 10px; color: var(--accent-red); font-weight: 600; text-transform: uppercase;">CRITICAL</span>
+                    <strong id="alert-summary-critical" style="font-size: 15px; color: var(--accent-red);">0</strong>
                 </div>
-                <div style="padding:16px;">
-                    <div class="mon-alert-grid" id="alerts-page-list">
-                        <!-- Populated dynamically -->
-                        <div class="mon-alert-empty">
-                            Memuat data alert...
-                        </div>
-                    </div>
+            </div>
+            <div class="summary-filter-card" id="card-alert-warning" onclick="window.monFilterAlerts('Warning', this)" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; opacity: 0.5;">
+                <i class="fas fa-exclamation-triangle" style="color: var(--accent-orange); font-size: 14px;"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 10px; color: var(--accent-orange); font-weight: 600; text-transform: uppercase;">WARNING</span>
+                    <strong id="alert-summary-warning" style="font-size: 15px; color: var(--accent-orange);">0</strong>
+                </div>
+            </div>
+            <div class="summary-filter-card" id="card-alert-resolved" onclick="window.monFilterAlerts('Resolved', this)" style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; opacity: 0.5;">
+                <i class="fas fa-check-circle" style="color: var(--accent-green); font-size: 14px;"></i>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 10px; color: var(--accent-green); font-weight: 600; text-transform: uppercase;">RESOLVED</span>
+                    <strong id="alert-summary-resolved" style="font-size: 15px; color: var(--accent-green);">0</strong>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ── Main Incident Container Card ── -->
+    <div class="card" style="padding:0; overflow:hidden; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-card);">
+        
+        <!-- Top Toolbar & Search Bar -->
+        <div class="noc-alert-toolbar">
+            <!-- Search Box -->
+            <div class="noc-search-box" style="position: relative; flex: 1; min-width: 240px; max-width: 400px;">
+                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none; z-index: 2;"></i>
+                <input type="text" id="alert-search-input" placeholder="Search device name, IP address, interface, or description..." oninput="window.monSearchAlerts(this.value); const btn = document.getElementById('clear-search-alerts'); if(btn){ btn.style.display = this.value ? 'flex' : 'none'; }" autocomplete="off" style="width: 100%; padding: 8px 36px 8px 34px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 12px; outline: none; transition: all 0.2s ease;">
+                <button type="button" id="clear-search-alerts" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); color: #94a3b8; border-radius: 50%; width: 20px; height: 20px; padding: 0; margin: 0; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; line-height: 1; outline: none; z-index: 5; transition: all 0.2s ease;" title="Clear search (Esc)" aria-label="Clear Search" onclick="const input = document.getElementById('alert-search-input'); if(input){ input.value=''; window.monSearchAlerts(''); this.style.display='none'; input.focus(); }" onmouseover="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.color='#ef4444'; this.style.borderColor='rgba(239, 68, 68, 0.5)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'; this.style.color='#94a3b8'; this.style.borderColor='rgba(255, 255, 255, 0.18)';">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            </div>
+        </div>
+
+        <!-- Alert Items Listing Container -->
+        <div style="padding: 16px;">
+            <div id="alerts-page-list">
+                <div class="mon-alert-empty">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Loading NOC incident alerts...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── NOC INCIDENT COMMAND DRAWER ── -->
+<div id="noc-drawer-backdrop" class="noc-drawer-backdrop" onclick="window.closeNocDrawer()"></div>
+<div id="noc-incident-drawer" class="noc-drawer">
+    <div class="noc-drawer-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="noc-drawer-severity-badge" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent-red); box-shadow: 0 0 10px var(--accent-red);"></div>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main);" id="noc-drawer-title">Incident Details</h3>
+        </div>
+        <button onclick="window.closeNocDrawer()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.color='#fff';" onmouseout="this.style.color='var(--text-muted)';">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="noc-drawer-body" id="noc-drawer-content">
+        <!-- Populated dynamically when alert item is clicked -->
+    </div>
+</div>
