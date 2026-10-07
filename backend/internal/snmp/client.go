@@ -376,17 +376,7 @@ func fallbackOSPing(ctx context.Context, ip string) (int, bool) {
 	return 0, false
 }
 
-// getRateCalculationInterval returns the rate calculation interval as time.Duration
-// UNUSED - func (c *Client) getRateCalculationInterval() time.Duration {
-// 	if c.fullCfg == nil || c.fullCfg.Polling.RateCalculationInterval == "" {
-// 		return 30 * time.Second // Default 30 seconds if not set
-// 	}
-// 	d, err := time.ParseDuration(c.fullCfg.Polling.RateCalculationInterval)
-// 	if err != nil || d <= 0 {
-// 		return 30 * time.Second
-// 	}
-// 	return d
-// }
+
 
 // queryGet performs a GET operation synchronously to avoid goroutine retention
 func (c *Client) queryGet(ctx context.Context, client *gosnmp.GoSNMP, oids []string) (*gosnmp.SnmpPacket, error) {
