@@ -262,6 +262,10 @@ func (m *Manager) processJob(
 	defer cancel()
 
 	collectorName := DetermineCollectorName(device)
+	if m.registry == nil {
+		m.logger.Warn("collector registry is nil, skipping job (test mode)", map[string]interface{}{"device": device.Name})
+		return
+	}
 	collector, err := m.registry.Get(collectorName)
 	if err != nil {
 		m.logger.Error("unsupported collector", map[string]interface{}{"device": device.Name, "error": err})

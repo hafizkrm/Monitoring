@@ -477,7 +477,7 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 	items := make([]map[string]interface{}, 0)
 
 	query := `
-		SELECT d.id, d.name, d.ip_address, d.device_type, COALESCE(m.status, d.status, 'up') AS status,
+		SELECT d.id, d.name, d.ip_address, d.device_type, COALESCE(m.status, 'up') AS status,
 		       COALESCE(m.cpu_usage, 0), COALESCE(m.memory_usage, 0), COALESCE(NULLIF(m.latency, 0), 1.5), COALESCE(m.packet_loss, 0),
 		       COALESCE(NULLIF(m.tx_rate, 0), im_summary.total_tx, 0) AS tx_rate,
 		       COALESCE(NULLIF(m.rx_rate, 0), im_summary.total_rx, 0) AS rx_rate,

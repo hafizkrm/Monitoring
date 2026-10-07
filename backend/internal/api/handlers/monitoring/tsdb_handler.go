@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
 	"github.com/hafizkrm/Monitoring/backend/internal/tsdb"
@@ -84,7 +85,7 @@ func TSDBQueryHandler(tsdbURL string, cfg config.PromQLConfig) http.HandlerFunc 
 		w.Header().Set("Content-Type", "application/json")
 
 		// P1: Restrict arbitrary PromQL to admins only
-		if role, ok := r.Context().Value("role").(string); !ok || role != "admin" {
+		if role, ok := r.Context().Value(middleware.UserRoleContextKey).(string); !ok || role != "admin" {
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Arbitrary PromQL is restricted to admins"})
 			return
