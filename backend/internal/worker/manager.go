@@ -257,8 +257,8 @@ func (m *Manager) processJob(
 		return
 	}
 
-	// P0-7: Overall poll timeout ~15s (reduced from 45s)
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	// P0-7: Overall poll timeout ~75s (increased to accommodate Cisco and large devices)
+	ctx, cancel := context.WithTimeout(ctx, 75*time.Second)
 	defer cancel()
 
 	collectorName := DetermineCollectorName(device)
