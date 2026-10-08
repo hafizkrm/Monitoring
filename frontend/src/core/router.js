@@ -15,6 +15,7 @@ import UserHtml from '../modules/users/users.html?raw';
 import backupHtml from '../modules/backup/backup.html?raw';
 
 import { initDevices, fetchDevicesTable } from '../modules/devices/devices.js';
+import { initDashboard } from '../modules/dashboard/dashboard.js';
 import { initAlerts } from '../modules/alerts/alerts.js';
 import { initReports } from '../modules/reports/reports.js';
 import { initLogs } from '../modules/logs/logs.js';
@@ -23,7 +24,7 @@ import { initUser, refreshUsers } from '../modules/users/users.js';
 import { initBackup } from '../modules/backup/backup.js';
 
 const MODULE_REGISTRY = {
-    dashboard: { html: dashboardHtml },
+    dashboard: { html: dashboardHtml, init: initDashboard },
     devices: { html: devicesHtml, init: initDevices, fetch: fetchDevicesTable },
     alerts: { html: alertsHtml, init: initAlerts },
     Reports: { html: ReportsHtml, init: initReports },
