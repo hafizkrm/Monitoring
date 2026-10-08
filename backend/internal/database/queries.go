@@ -195,26 +195,19 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 		       COALESCE(NULLIF(m.rx_rate, 0), im_summary.total_rx, 0) AS rx_rate,
 		       COALESCE(m.jitter, 0), COALESCE(m.uptime, 0), m.collected_at, d.updated_at, d.created_at
 		FROM devices d
+		LEFT JOIN device_metrics m ON m.id = (
+			SELECT MAX(id) FROM device_metrics WHERE device_id = d.id AND collected_at >= NOW() - INTERVAL 1 HOUR
+		)
 		LEFT JOIN (
-			SELECT m1.*
-			FROM device_metrics m1
-			INNER JOIN (
-				SELECT device_id, MAX(id) AS max_id
-				FROM device_metrics
-				WHERE collected_at >= NOW() - INTERVAL 1 HOUR
-				GROUP BY device_id
-			) m2 ON m1.id = m2.max_id
-		) m ON m.device_id = d.id
-		LEFT JOIN (
-			SELECT im1.device_id, SUM(im1.rx_mbps) AS total_rx, SUM(im1.tx_mbps) AS total_tx
-			FROM interface_metrics im1
-			INNER JOIN (
-				SELECT device_id, interface_name, MAX(collected_at) AS max_time
+			SELECT device_id, SUM(rx_mbps) AS total_rx, SUM(tx_mbps) AS total_tx
+			FROM interface_metrics
+			WHERE id IN (
+				SELECT MAX(id)
 				FROM interface_metrics
 				WHERE collected_at >= NOW() - INTERVAL 10 MINUTE
 				GROUP BY device_id, interface_name
-			) latest_if ON im1.device_id = latest_if.device_id AND im1.interface_name = latest_if.interface_name AND im1.collected_at = latest_if.max_time
-			GROUP BY im1.device_id
+			)
+			GROUP BY device_id
 		) im_summary ON im_summary.device_id = d.id
 		WHERE COALESCE(d.enabled, 1) = 1
 		ORDER BY d.id ASC`

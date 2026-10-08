@@ -80,8 +80,8 @@ export async function loadBandwidthHistory(duration = currentBwDuration) {
     }
 }
 
-export async function initDashboard() {
-    await loadBandwidthHistory();
+export function initDashboard() {
+    loadBandwidthHistory().catch(e => console.warn('Failed to load initial bandwidth history:', e));
     initBandwidthChart();
     initDistributionChart();
     initDeviceTabs();

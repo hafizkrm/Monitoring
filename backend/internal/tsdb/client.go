@@ -22,7 +22,7 @@ func NewPrometheusClient(baseURL string) *PrometheusClient {
 	return &PrometheusClient{
 		BaseURL: baseURL,
 		HTTPClient: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 1 * time.Second,
 		},
 	}
 }
