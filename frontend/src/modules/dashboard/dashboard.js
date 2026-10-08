@@ -50,7 +50,7 @@ export async function loadBandwidthHistory(duration = currentBwDuration) {
                     }
                     data = [...padded, ...data];
                 }
-                bandwidthData.labels = data.map(item => item.Timestamp);
+                bandwidthData.labels = data.map(item => item.timestamp || item.Timestamp);
                 bandwidthData.download = data.map(item => parseFloat((item.download || 0).toFixed(0)));
                 bandwidthData.upload = data.map(item => parseFloat((item.upload || 0).toFixed(0)));
             } else {

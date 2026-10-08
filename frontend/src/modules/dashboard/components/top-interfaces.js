@@ -17,6 +17,8 @@ export function initTopInterfaces() {
         if (Date.now() - lastInterfaceFetchTime > 10000) {
             fetchTopInterfaces();
             lastInterfaceFetchTime = Date.now();
+        } else {
+            renderTopInterfaces();
         }
     });
 

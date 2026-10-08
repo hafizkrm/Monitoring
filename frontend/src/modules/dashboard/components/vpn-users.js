@@ -9,6 +9,7 @@ function getEl(id) {
 }
 
 let lastVPNFetchTime = 0;
+let lastVPNHtml = null;
 
 export function initVPNUsers() {
     // Poll VPN users setiap 10 detik saat dipanggil dari updateDashboardStats
@@ -16,6 +17,9 @@ export function initVPNUsers() {
         if (Date.now() - lastVPNFetchTime > 10000) {
             updateVPNUser();
             lastVPNFetchTime = Date.now();
+        } else if (lastVPNHtml !== null) {
+            const container = getEl('vpn-User-container');
+            if (container) safeSetHTML(container, lastVPNHtml);
         }
     });
 }
@@ -90,6 +94,8 @@ export async function updateVPNUser() {
         setContainerCentered(container);
         safeSetHTML(container, renderVPNError('Network error connecting to Gateway API'));
     }
+    
+    lastVPNHtml = container.innerHTML;
 }
 
 function setContainerCentered(container) {
