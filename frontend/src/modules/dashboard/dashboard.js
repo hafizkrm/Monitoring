@@ -3,6 +3,7 @@
 
 import { isOnline } from '../../shared/utils/helpers.js';
 import { metricsStore } from '../../core/state/store.js';
+import { updateDashboardStats } from './stats.js';
 import Chart from 'chart.js/auto';
 window.Chart = Chart; // Expose globally for reports.js and interfaces.js
 
@@ -85,6 +86,12 @@ export function initDashboard() {
     initBandwidthChart();
     initDistributionChart();
     initDeviceTabs();
+
+    // Immediately paint dashboard widgets if state already contains metrics
+    const currentMetrics = metricsStore.getState().fullMetrics;
+    if (currentMetrics && currentMetrics.length > 0) {
+        updateDashboardStats([...currentMetrics]);
+    }
 
     if (window._bandwidthInterval) {
         clearInterval(window._bandwidthInterval);
