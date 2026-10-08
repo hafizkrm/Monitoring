@@ -199,15 +199,15 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 			SELECT MAX(id) FROM device_metrics WHERE device_id = d.id AND collected_at >= NOW() - INTERVAL 1 HOUR
 		)
 		LEFT JOIN (
-			SELECT device_id, SUM(rx_mbps) AS total_rx, SUM(tx_mbps) AS total_tx
-			FROM interface_metrics
-			WHERE id IN (
-				SELECT MAX(id)
+			SELECT im1.device_id, SUM(im1.rx_mbps) AS total_rx, SUM(im1.tx_mbps) AS total_tx
+			FROM interface_metrics im1
+			INNER JOIN (
+				SELECT device_id, interface_name, MAX(collected_at) AS max_time
 				FROM interface_metrics
 				WHERE collected_at >= NOW() - INTERVAL 10 MINUTE
 				GROUP BY device_id, interface_name
-			)
-			GROUP BY device_id
+			) latest_if ON im1.device_id = latest_if.device_id AND im1.interface_name = latest_if.interface_name AND im1.collected_at = latest_if.max_time
+			GROUP BY im1.device_id
 		) im_summary ON im_summary.device_id = d.id
 		WHERE COALESCE(d.enabled, 1) = 1
 		ORDER BY d.id ASC`
@@ -215,10 +215,11 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		log.Printf("[ERROR] GetLatestMetrics query error: %v", err)
-	} else {
-		defer rows.Close()
+		return nil, err
+	}
+	defer rows.Close()
 
-		for rows.Next() {
+	for rows.Next() {
 			var rawID string
 			var name, ip, devType, status sql.NullString
 			var cpu, ram, latency, loss, tx, rx, jitter sql.NullFloat64
@@ -314,6 +315,11 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 				}
 			}
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("[ERROR] GetLatestMetrics iteration error: %v", err)
+		return nil, err
 	}
 
 	return items, nil
