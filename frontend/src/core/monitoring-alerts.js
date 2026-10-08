@@ -509,8 +509,8 @@
                                 <div style="font-weight: 700; color: var(--text-main); cursor: pointer;" onclick="window.openNocDrawer('${a.id}')">${escapeHtml(a.title)}</div>
                                 <code style="font-size: 10px; color: #60a5fa;">${escapeHtml(a.ip || 'No IP')}</code>
                             </td>
-                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted);" title="${escapeHtml(a.desc)}">
-                                ${escapeHtml(a.desc)}
+                            <td style="max-width: 350px; color: var(--text-muted); line-height: 1.5; font-size: 11.5px;">
+                                ${escapeHtml(a.desc).split(' • ').map(item => `<div style="margin-bottom: 2px;"><span style="color: var(--accent-blue); margin-right: 6px; opacity: 0.8;">•</span> ${item}</div>`).join('')}
                             </td>
                             <td>
                                 <span class="${a.type === 'resolved' || a.type === 'success' ? 'noc-outage-static' : 'noc-outage-ticker'}" data-created-at="${a.createdAtIso || ''}" data-status="${a.type}" style="${a.type === 'resolved' || a.type === 'success' ? 'background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); animation: none;' : (a.type === 'warning' ? 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);' : '')}">
@@ -576,7 +576,9 @@
                                         ${a.ip ? `<span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #60a5fa; border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-network-wired" style="margin-right: 4px;"></i>${escapeHtml(a.ip)}</span>` : ''}
                                         <span><i class="far fa-clock" style="margin-right: 4px;"></i>${escapeHtml(a.Time)}</span>
                                     </div>
-                                    <div style="font-size: 12px; color: #cbd5e1; margin-top: 2px; line-height: 1.4;">${escapeHtml(a.desc)}</div>
+                                    <div style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.5;">
+                                        ${escapeHtml(a.desc).split(' • ').map(item => `<div style="margin-bottom: 2px;"><span style="color: var(--accent-blue); margin-right: 6px; opacity: 0.8;">•</span> ${item}</div>`).join('')}
+                                    </div>
                                 </div>
                             </div>
 
@@ -678,7 +680,20 @@
                                 </div>
                                 <span style="font-size: 10px; color: var(--text-muted); white-space: nowrap; margin-left: 8px;">${a.Time}</span>
                             </div>
-                            <div style="font-size: 11px; color: #cbd5e1; line-height: 1.4;">${a.desc}</div>
+                            <div style="font-size: 11px; color: #cbd5e1; line-height: 1.4; margin-top: 4px;">
+                                ${(() => {
+                                    const events = (a.desc || '').split(' • ').filter(Boolean);
+                                    if (events.length === 0) return '';
+                                    const displayEvents = events.slice(0, 3);
+                                    const extra = events.length - 3;
+                                    const escapeHtml = (unsafe) => String(unsafe || '').replace(/[&<"']/g, m => ({'&': '&amp;', '<': '&lt;', '"': '&quot;', "'": '&#39;'}[m]));
+                                    let html = displayEvents.map(e => `<div style="margin-bottom: 4px; line-height: 1.4;"><span style="color: var(--accent-blue); opacity: 0.7; margin-right: 4px;">•</span> ${escapeHtml(e)}</div>`).join('');
+                                    if (extra > 0) {
+                                        html += `<div style="margin-top: 4px; font-size: 10px; color: #60a5fa; font-weight: 600; font-style: italic; padding-left: 10px;">+ ${extra} more events...</div>`;
+                                    }
+                                    return html;
+                                })()}
+                            </div>
                         </div>
                         `;
                     }).join('');

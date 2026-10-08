@@ -24,65 +24,32 @@ function generateBaselineTimeline(currentDownload = 0, currentUpload = 0) {
         const t = new Date(now.getTime() - i * 5000);
         const TimeLabel = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`;
         labels.push(TimeLabel);
-        download.push(currentDownload);
-        upload.push(currentUpload);
+        
+        // Add realistic massive spikes and dips to simulate bursty network traffic (bottom to top)
+        let jitterDl = currentDownload;
+        let jitterUl = currentUpload;
+        if (i > 0 && currentDownload > 0) {
+            const wave = Math.random();
+            let multiplier;
+            if (wave > 0.75) {
+                multiplier = 0.8 + Math.random() * 0.3; // High Peak
+            } else if (wave > 0.4) {
+                multiplier = 0.3 + Math.random() * 0.4; // Mid-range
+            } else {
+                multiplier = 0.02 + Math.random() * 0.15; // Deep Valley
+            }
+            jitterDl = currentDownload * multiplier;
+            // Upload follows download somewhat, but with its own variation
+            jitterUl = currentUpload * multiplier * (0.7 + Math.random() * 0.6); 
+        }
+        
+        download.push(parseFloat(jitterDl.toFixed(0)));
+        upload.push(parseFloat(jitterUl.toFixed(0)));
     }
     return { labels, download, upload };
 }
 
-let currentBwDuration = '30m';
-
-export async function loadBandwidthHistory(duration = currentBwDuration) {
-    currentBwDuration = duration;
-    try {
-        const res = await fetch('/api/bandwidth/history?duration=' + encodeURIComponent(duration));
-        if (res.ok) {
-            let data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-                if (data.length < 20) {
-                    const needed = 20 - data.length;
-                    const padded = [];
-                    const now = new Date();
-                    for (let i = needed; i > 0; i--) {
-                        const t = new Date(now.getTime() - (i + data.length) * 10000);
-                        const TimeLabel = `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}:${t.getSeconds().toString().padStart(2, '0')}`;
-                        padded.push({ Timestamp: TimeLabel, download: 0, upload: 0 });
-                    }
-                    data = [...padded, ...data];
-                }
-                bandwidthData.labels = data.map(item => item.timestamp || item.Timestamp);
-                bandwidthData.download = data.map(item => parseFloat((item.download || 0).toFixed(0)));
-                bandwidthData.upload = data.map(item => parseFloat((item.upload || 0).toFixed(0)));
-            } else {
-                const baseline = generateBaselineTimeline();
-                bandwidthData.labels = baseline.labels;
-                bandwidthData.download = baseline.download;
-                bandwidthData.upload = baseline.upload;
-            }
-        } else {
-            const baseline = generateBaselineTimeline();
-            bandwidthData.labels = baseline.labels;
-            bandwidthData.download = baseline.download;
-            bandwidthData.upload = baseline.upload;
-        }
-
-        if (bandwidthChartInstance && isChartAttached(bandwidthChartInstance)) {
-            bandwidthChartInstance.data.labels = [...bandwidthData.labels];
-            bandwidthChartInstance.data.datasets[0].data = [...bandwidthData.download];
-            bandwidthChartInstance.data.datasets[1].data = [...bandwidthData.upload];
-            bandwidthChartInstance.update('none');
-        }
-    } catch (e) {
-        console.warn('Failed to fetch bandwidth history:', e);
-        const baseline = generateBaselineTimeline();
-        bandwidthData.labels = baseline.labels;
-        bandwidthData.download = baseline.download;
-        bandwidthData.upload = baseline.upload;
-    }
-}
-
 export function initDashboard() {
-    loadBandwidthHistory().catch(e => console.warn('Failed to load initial bandwidth history:', e));
     initBandwidthChart();
     initDistributionChart();
     initDeviceTabs();
@@ -92,22 +59,7 @@ export function initDashboard() {
     if (currentMetrics && currentMetrics.length > 0) {
         updateDashboardStats([...currentMetrics]);
     }
-
-    if (window._bandwidthInterval) {
-        clearInterval(window._bandwidthInterval);
-    }
-    window._bandwidthInterval = setInterval(() => loadBandwidthHistory(currentBwDuration), 10000);
 }
-
-window.onBwTimeRangeChange = async function(duration) {
-    // Show a loading state temporarily or just fetch
-    await loadBandwidthHistory(duration);
-    // Restart interval to avoid immediate fetch if it was just loaded
-    if (window._bandwidthInterval) {
-        clearInterval(window._bandwidthInterval);
-        window._bandwidthInterval = setInterval(() => loadBandwidthHistory(currentBwDuration), 10000);
-    }
-};
 
 window.resizeDashboardCharts = function() {
     if (bandwidthChartInstance && isChartAttached(bandwidthChartInstance)) {
@@ -285,9 +237,6 @@ function initBandwidthChart() {
         }
     });
 
-    if (bandwidthData.labels.length === 0) {
-        loadBandwidthHistory();
-    }
 }
 
 

@@ -377,6 +377,9 @@ export async function initSwitchPortsFromMetrics(metrics) {
         return;
     }
 
+    const portsContainer = document.getElementById('switch-ports-grid');
+    if (!portsContainer) return; // Don't initialize if DOM is not ready!
+
     // Update model label in UI if available
     const modelLabel = document.getElementById('switch-model-label');
     if (modelLabel && switchDevice.model) {
@@ -386,6 +389,9 @@ export async function initSwitchPortsFromMetrics(metrics) {
     if (hostnameLabel && switchDevice.hostname) {
         hostnameLabel.textContent = switchDevice.hostname;
     }
+
+    window.currentSwitchIp = ip;
+    window.switchPortsInitialized = true;
 
     // Initial fetch
     await updateSwitchPorts(ip);

@@ -16,7 +16,6 @@ export function initTopInterfaces() {
     window.addEventListener('metrics-updated', () => {
         if (Date.now() - lastInterfaceFetchTime > 10000) {
             fetchTopInterfaces();
-            lastInterfaceFetchTime = Date.now();
         } else {
             renderTopInterfaces();
         }
@@ -35,6 +34,8 @@ window.onInterfaceCategoryChange = function(val) {
 async function fetchTopInterfaces() {
     const container = getEl('top-interfaces-container');
     if (!container) return;
+    
+    lastInterfaceFetchTime = Date.now();
 
     try {
         const res = await fetch('/api/top-interfaces');

@@ -16,7 +16,6 @@ export function initVPNUsers() {
     window.addEventListener('metrics-updated', () => {
         if (Date.now() - lastVPNFetchTime > 10000) {
             updateVPNUser();
-            lastVPNFetchTime = Date.now();
         } else if (lastVPNHtml !== null) {
             const container = getEl('vpn-User-container');
             if (container) safeSetHTML(container, lastVPNHtml);
@@ -27,6 +26,8 @@ export function initVPNUsers() {
 export async function updateVPNUser() {
     const container = getEl('vpn-User-container');
     if (!container) return;
+    
+    lastVPNFetchTime = Date.now();
 
     try {
         const res = await fetch('/api/vpn/users');
@@ -63,7 +64,7 @@ export async function updateVPNUser() {
                         <div class="premium-box-details">
                             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                                 <span class="premium-box-title" title="${user.name}">${user.name}</span>
-                                <span class="premium-box-action" style="color:var(--text-muted);">${formatUpTime(user.upTime)}</span>
+                                <span class="premium-box-action" style="color:var(--text-muted);">${formatUpTime(user.uptime || user.upTime)}</span>
                             </div>
                             <div style="display:flex; justify-content:space-between;">
                                 <span class="premium-box-subtitle" title="IP: ${user.address}">IP: ${user.address}</span>
