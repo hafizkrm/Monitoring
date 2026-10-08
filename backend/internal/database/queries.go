@@ -274,7 +274,6 @@ func (db *Database) GetLatestMetrics(ctx context.Context) ([]map[string]interfac
 				"collected_at": collTime,
 			})
 		}
-	}
 
 	// Fallback if no device metrics were found
 	if len(items) == 0 {
