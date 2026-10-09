@@ -17,6 +17,17 @@ coverage.out
 
 # Go workspace file
 go.work
+go.work.sum
+
+# Go profiling output
+*.prof
+
+# Agent / scratch debug output
+agent_log*.txt
+metrics.json
+test_output*.txt
+test_*_out.txt
+test_*.go
 
 # Dependency directories
 vendor/
