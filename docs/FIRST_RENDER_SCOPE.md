@@ -153,6 +153,11 @@ Item yang ditemukan tapi **tidak masuk scope sekarang**. Kalau mau dikerjakan, d
 
 - Bundle size - Chart.js ikut ter-load walau user tidak pernah buka dashboard. Lazy-load per-view butuh perubahan arsitektur router.
 
+### Ditemukan Saat Scope Ini, Tapi Punya Dokumen Sendiri
+
+- ~~Placeholder `20 Mei 2024` / `10:30 WIB`~~ — sudah diperbaiki, bukan masalah render.
+- **Perhitungan bandwidth per kategori** — muncul saat membersihkan placeholder, tapi ini masalah **benar/tidaknya angka**, bukan urutan render. Kontradiksi rx/tx, double counting di backend, dan duplikasi komputasi. Sudah dipindah ke `BANDWIDTH_SCOPE.md`. **Jangan ditarik masuk ke scope ini**; perbaikannya menyentuh backend.
+
 ### Sudah Selesai (dihapus dari backlog)
 
 - ~~`preloadAllModules()` memuat 10 modul di boot~~ — sudah dipindah ke idle callback (`router.js:237-244`) pada Scope 2.
