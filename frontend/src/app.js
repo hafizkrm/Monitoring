@@ -8,9 +8,10 @@ import { startClock } from './core/services/datetime.service.js';
 import { requestNotificationPermission } from './core/services/notification.service.js';
 import { initRealTime } from './core/services/realtime.service.js';
 import { showToast } from './shared/components/toast.js';
-import { getCurrentUser, logout, isAuthenticated } from './core/services/auth.service.js';
+import { getCurrentUser, logout, isAuthenticated, verifySession, startSessionRefresh } from './core/services/auth.service.js';
 import { canAccess } from './core/services/permission.service.js';
 import { initEnterpriseFeatures } from './core/enterprise.js';
+import { initSidebarEvents } from './core/sidebar.service.js';
 import { initDeviceDetail } from './modules/devices/deviceDetail.js';
 import { isTSDBAvailable } from './core/services/tsdb.service.js';
 import './core/services/audio.service.js';
@@ -24,11 +25,31 @@ window.showToast = showToast;
 // Chart.js is now imported dynamically in dashboard.js
 // Initialize application
 async function initApp() {
-    // Check Auth
-    if (!isAuthenticated()) {
+    let sessionUser = null;
+    let connectionUnavailable = false;
+    try {
+        sessionUser = await verifySession();
+    } catch (error) {
+        if (isAuthenticated()) {
+            sessionUser = getCurrentUser();
+            connectionUnavailable = true;
+        }
+    }
+    if (!sessionUser) {
         window.location.href = 'login.html';
         return;
     }
+    window.addEventListener('auth-session-expired', () => {
+        window.location.replace('login.html');
+    });
+    window.addEventListener('auth-connection-lost', () => {
+        showToast('Koneksi sesi terputus. Mencoba menghubungkan kembali...', 'warning');
+    });
+    window.addEventListener('auth-session-restored', () => {
+        showToast('Sesi monitoring tersambung kembali.', 'success');
+    });
+    if (connectionUnavailable) window.dispatchEvent(new CustomEvent('auth-connection-lost'));
+    startSessionRefresh();
 
     // Apply Permissions to UI
     applyPermissions();
@@ -37,13 +58,18 @@ async function initApp() {
     // Init Enterprise UI Features
     initEnterpriseFeatures();
     initDeviceDetail();
+    initSidebarEvents();
 
     // Bind Logout (support multiple buttons, e.g., sidebar and top nav)
     const logoutBtns = document.querySelectorAll('.btn-logout');
     logoutBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            logout();
-            window.location.href = 'login.html';
+        btn.addEventListener('click', async () => {
+            try {
+                await logout();
+                window.location.replace('login.html');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
         });
     });
 
@@ -131,6 +157,10 @@ function applyPermissions() {
         if (view && !canAccess(view)) {
             item.style.display = 'none';
         }
+    });
+    document.querySelectorAll('.nav-section').forEach(section => {
+        const hasVisibleItem = [...section.querySelectorAll('.nav-item')].some(item => item.style.display !== 'none');
+        section.style.display = hasVisibleItem ? '' : 'none';
     });
 }
 

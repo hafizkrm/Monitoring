@@ -13,6 +13,8 @@ import logsHtml from '../modules/logs/logs.html?raw';
 import SettingsHtml from '../modules/settings/settings.html?raw';
 import UserHtml from '../modules/users/users.html?raw';
 import backupHtml from '../modules/backup/backup.html?raw';
+import integrationHtml from '../modules/integration/integration.html?raw';
+import docsHtml from '../modules/docs/docs.html?raw';
 
 import { initDevices, fetchDevicesTable } from '../modules/devices/devices.js';
 import { initDashboard } from '../modules/dashboard/dashboard.js';
@@ -22,16 +24,19 @@ import { initLogs } from '../modules/logs/logs.js';
 import { initSettings } from '../modules/settings/settings.js';
 import { initUser, refreshUsers } from '../modules/users/users.js';
 import { initBackup } from '../modules/backup/backup.js';
+import { initIntegration } from '../modules/integration/integration.js';
 
 const MODULE_REGISTRY = {
     dashboard: { html: dashboardHtml, init: initDashboard },
     devices: { html: devicesHtml, init: initDevices, fetch: fetchDevicesTable },
     alerts: { html: alertsHtml, init: initAlerts },
-    Reports: { html: ReportsHtml, init: initReports },
+    reports: { html: ReportsHtml, init: initReports },
     logs: { html: logsHtml, init: initLogs },
-    Settings: { html: SettingsHtml, init: initSettings },
-    User: { html: UserHtml, init: initUser, fetch: refreshUsers },
-    backup: { html: backupHtml, init: initBackup }
+    settings: { html: SettingsHtml, init: initSettings },
+    users: { html: UserHtml, init: initUser, fetch: refreshUsers },
+    backup: { html: backupHtml, init: initBackup },
+    integration: { html: integrationHtml, init: initIntegration },
+    docs: { html: docsHtml }
 };
 
 const htmlCache = {};
@@ -129,10 +134,12 @@ export async function switchView(view) {
     
     // Update active nav item
     navItems.forEach(item => {
-        if (item.getAttribute('data-view') === view) {
-            item.classList.add('active');
+        const isActive = item.getAttribute('data-view') === view;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+            item.setAttribute('aria-current', 'page');
         } else {
-            item.classList.remove('active');
+            item.removeAttribute('aria-current');
         }
     });
     
@@ -206,20 +213,10 @@ function triggerViewHooks(view) {
             window.fetchLogs();
         }
     }
-    if (view === 'monitoring') {
-        window.monInitView && window.monInitView();
+    if (view === 'users') {
+        MODULE_REGISTRY.users.fetch();
     }
-    if (view === 'Reports') {
-        // Only auto-generate if no data loaded yet; otherwise re-use cached data
-        if (window.generateReport && !window._ReportsDataLoaded) {
-            window._ReportsDataLoaded = true;
-            window.generateReport();
-        }
-    }
-    if (view === 'User') {
-        MODULE_REGISTRY.User.fetch();
-    }
-    if (view === 'Settings') {
+    if (view === 'settings') {
         if (window.refreshSettingsData) window.refreshSettingsData();
     }
 }
@@ -231,20 +228,6 @@ window.switchView = switchView;
 
 // Initialize navigation
 export function initRouter() {
-    const navItems = document.querySelectorAll('.nav-item');
-    
-    navItems.forEach(item => {
-        item.addEventListener('click', async (e) => {
-            if (item.classList.contains('has-submenu')) return;
-            e.stopPropagation();
-            
-            const view = item.getAttribute('data-view');
-            if (!view) return;
-            
-            await switchView(view);
-        });
-    });
-
     // Default view on load
     setTimeout(() => {
         const defaultView = document.querySelector('.nav-item.active') || document.querySelector('.nav-item[data-view="dashboard"]');

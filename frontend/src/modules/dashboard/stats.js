@@ -12,7 +12,7 @@ import { initHighestLatency } from './components/highest-latency.js';
 import { initDeviceTable } from './components/device-table.js';
 import { initVPNUsers } from './components/vpn-users.js';
 import { initTopInterfaces } from './components/top-interfaces.js';
-import { metricsStore } from '../../core/state/store.js';
+import { metricsStore, sidebarStore } from '../../core/state/store.js';
 import { state } from '../../core/state.js';
 
 // DOM Delta Update Helper to prevent layout thrashing
@@ -23,13 +23,14 @@ export const safeSetHTML = (el, html) => {
 let globalTrueDeviceTotal = 0;
 async function fetchTrueDeviceTotal() {
     try {
-        const res = await fetch('/api/inventory?page=1&limit=1');
+        const res = await fetch('/api/inventory/stats');
         const data = await res.json();
-        if (data && data.total) {
-            globalTrueDeviceTotal = data.total;
-            window.globalTrueDeviceTotal = data.total;
+        const total = data?.total_devices ?? data?.Total;
+        if (Number.isFinite(Number(total))) {
+            globalTrueDeviceTotal = Number(total);
+            window.globalTrueDeviceTotal = globalTrueDeviceTotal;
             if (state && state.pagination && state.pagination.devices) {
-                state.pagination.devices.total = data.total;
+                state.pagination.devices.total = globalTrueDeviceTotal;
             }
         }
     } catch (e) { }
@@ -87,12 +88,10 @@ export function updateDashboardStats(metrics) {
     offlineCount = Math.max(0, total - onlineCount - disabledCount);
 
     if (getEl('stat-total-devices')) getEl('stat-total-devices').innerText = total;
-    if (getEl('sidebar-device-badge')) {
-        const devBadge = getEl('sidebar-device-badge');
-        devBadge.innerText = total;
-        devBadge.style.display = total > 0 ? 'inline-flex' : 'none';
-        devBadge.title = `${onlineCount} Online / ${total} Total`;
-    }
+    sidebarStore.setState({
+        deviceCount: total,
+        deviceStatusSummary: `${onlineCount} Online / ${total} Total`
+    });
     if (getEl('stat-online')) getEl('stat-online').innerText = onlineCount;
     if (getEl('stat-offline')) getEl('stat-offline').innerText = offlineCount;
 

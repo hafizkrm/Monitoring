@@ -61,7 +61,7 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -260px;
+            left: 0;
             width: 275px; /* 260px + 15px transparent hover trigger */
             
             /* Create 15px transparent hover trigger on the right */
@@ -78,17 +78,17 @@
             height: 100vh;
             padding: 24px 20px;
             box-sizing: border-box;
-            transition: left 0.3s ease-in-out;
+            transform: translateX(-260px);
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease;
             transition-delay: 0.15s; /* delay before hiding to prevent jitter */
             z-index: 100;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
-            will-change: left;
         }
 
         .sidebar:hover, .sidebar.open {
-            left: 0;
+            transform: translateX(0);
             transition-delay: 0s; /* open immediately */
         }
 
@@ -815,10 +815,10 @@
             .sidebar {
                 position: fixed;
                 top: 0;
-                left: -260px;
                 bottom: 0;
                 z-index: 100;
-                transition: left 0.3s ease-in-out;
+                transform: translateX(-260px);
+                transition: transform 0.3s ease-in-out;
             }
         }
 

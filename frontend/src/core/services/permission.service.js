@@ -6,22 +6,17 @@ export const ACL = {
         "dashboard",
         "devices",
         "alerts",
-        "Reports",
+        "reports",
         "logs",
-        "Settings",
-        "User",
+        "settings",
+        "users",
         "integration",
         "backup",
-        "docs",
-        "mikrotik-ethernet",
-        "monitoring"
+        "docs"
     ],
-    view: [
+    viewer: [
         "dashboard",
-        "devices",
-        "alerts",
-        "Reports",
-        "monitoring"
+        "alerts"
     ]
 };
 

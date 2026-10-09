@@ -45,9 +45,9 @@ function initCommandPalette() {
     const quickLinks = [
         { title: 'Dashboard', type: 'Module', icon: 'fa-th-large', view: 'dashboard' },
         { title: 'Device List', type: 'Module', icon: 'fa-network-wired', view: 'devices' },
-        { title: 'Performance Reports', type: 'Module', icon: 'fa-chart-bar', view: 'Reports' },
-        { title: 'System Settings', type: 'Module', icon: 'fa-cog', view: 'Settings' },
-        { title: 'User Management', type: 'Module', icon: 'fa-user', view: 'User' },
+        { title: 'Performance Reports', type: 'Module', icon: 'fa-chart-bar', view: 'reports' },
+        { title: 'System Settings', type: 'Module', icon: 'fa-cog', view: 'settings' },
+        { title: 'User Management', type: 'Module', icon: 'fa-user', view: 'users' },
         { title: 'Activity Logs', type: 'Module', icon: 'fa-history', view: 'logs' }
     ];
 

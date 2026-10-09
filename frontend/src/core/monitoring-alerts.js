@@ -1,3 +1,6 @@
+import { isAdmin } from './services/permission.service.js';
+import { sidebarStore } from './state/store.js';
+
         /* ---- SECTION 6: Alerts ---- */
         let _currentAlertFilter = 'All';
         let _monAlertCurrentPage = 1;
@@ -6,6 +9,7 @@
         let _rawAlertsList = null;
 
         window.resolveSingleAlert = async function(id, btnElement) {
+            if (!isAdmin()) return;
             try {
                 if (btnElement) {
                     btnElement.disabled = true;
@@ -179,11 +183,11 @@
                 <div style="padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; gap: 10px;">
                     <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">NOC Quick Diagnostics</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <button type="button" onclick="window.runPing('${escapeHtml(alertItem.ip)}')" class="btn-sm" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-network-wired"></i> Run Ping</button>
-                        <button type="button" onclick="window.runTrace('${escapeHtml(alertItem.ip)}')" class="btn-sm" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-route"></i> Run Tracert</button>
+                        ${isAdmin() ? `<button type="button" onclick="window.runPing('${escapeHtml(alertItem.ip)}')" class="btn-sm" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-network-wired"></i> Run Ping</button>` : ''}
+                        ${isAdmin() ? `<button type="button" onclick="window.runTrace('${escapeHtml(alertItem.ip)}')" class="btn-sm" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-route"></i> Run Tracert</button>` : ''}
                     </div>
                     <button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(alertItem.ip)}'); if(window.showToast) window.showToast('IP Address copied to clipboard');" class="btn-sm" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px; border-radius: 8px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-copy"></i> Copy IP Address</button>
-                    ${alertItem.type !== 'resolved' && alertItem.type !== 'success' ? `<button type="button" onclick="window.resolveSingleAlert('${escapeHtml(alertItem.id)}', this); window.closeNocDrawer();" class="btn-sm" style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;"><i class="fas fa-check"></i> Resolve Incident</button>` : ''}
+                    ${isAdmin() && alertItem.type !== 'resolved' && alertItem.type !== 'success' ? `<button type="button" onclick="window.resolveSingleAlert('${escapeHtml(alertItem.id)}', this); window.closeNocDrawer();" class="btn-sm" style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px;"><i class="fas fa-check"></i> Resolve Incident</button>` : ''}
                 </div>
             `;
 
@@ -468,11 +472,7 @@
             if (elSumWarn) elSumWarn.textContent = warningCount;
             if (elSumRes) elSumRes.textContent = resolvedCount;
 
-            const sidebarAlertBadge = document.getElementById('sidebar-alert-badge');
-            if (sidebarAlertBadge) {
-                sidebarAlertBadge.textContent = unreadCount;
-                sidebarAlertBadge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-            }
+            sidebarStore.setState({ alertCount: unreadCount });
 
             // ── Build alert HTML based on view mode (Cards vs Matrix Table) ──
             const emptyHtml = `<div class="mon-alert-empty" style="text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px;"><i class="fas fa-check-circle" style="font-size: 28px; color: var(--accent-green); margin-bottom: 10px; display: block;"></i>No alerts matching the selected filter.</div>`;
@@ -591,9 +591,9 @@
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                     <button type="button" onclick="window.openNocDrawer('${escapeHtml(a.id)}')" title="Inspect Incident Drawer" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(59, 130, 246, 0.25)';" onmouseout="this.style.background='rgba(59, 130, 246, 0.15)';"><i class="fas fa-search-plus"></i> Inspect</button>
                                     ${a.ip ? `<button type="button" onclick="navigator.clipboard.writeText('${escapeHtml(a.ip)}'); if(window.showToast) window.showToast('IP ${escapeHtml(a.ip)} copied');" title="Copy IP" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); font-size: 11px; font-weight: 500; padding: 5px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-copy"></i></button>` : ''}
-                                    ${a.ip ? `<button type="button" onclick="window.runPing('${escapeHtml(a.ip)}')" title="Ping ${escapeHtml(a.ip)}" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-network-wired"></i> Ping</button>` : ''}
-                                    ${a.ip ? `<button type="button" onclick="window.runTrace('${escapeHtml(a.ip)}')" title="Tracert ${escapeHtml(a.ip)}" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-route"></i> Tracert</button>` : ''}
-                                    ${a.type !== 'resolved' && a.type !== 'success' ? `<button type="button" onclick="window.resolveSingleAlert('${escapeHtml(a.id)}', this)" title="Resolve Incident" style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-check"></i> Resolve</button>` : ''}
+                                    ${isAdmin() && a.ip ? `<button type="button" onclick="window.runPing('${escapeHtml(a.ip)}')" title="Ping ${escapeHtml(a.ip)}" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-network-wired"></i> Ping</button>` : ''}
+                                    ${isAdmin() && a.ip ? `<button type="button" onclick="window.runTrace('${escapeHtml(a.ip)}')" title="Tracert ${escapeHtml(a.ip)}" style="background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-route"></i> Tracert</button>` : ''}
+                                    ${isAdmin() && a.type !== 'resolved' && a.type !== 'success' ? `<button type="button" onclick="window.resolveSingleAlert('${escapeHtml(a.id)}', this)" title="Resolve Incident" style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #facc15; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-check"></i> Resolve</button>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -701,47 +701,9 @@
             }
         };
 
-        // Mobile Sidebar Toggle
-        const btnMobileMenu = document.getElementById('btn-mobile-menu');
-        const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-
-        function toggleSidebar() {
-            const isOpen = sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-            [btnMobileMenu, btnSidebarToggle].forEach(btn => {
-                if (btn) {
-                    btn.setAttribute('aria-expanded', isOpen);
-                    btn.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
-                    const icon = btn.querySelector('i');
-                    if (icon) icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
-                }
-            });
-        }
-
-        if (btnMobileMenu) btnMobileMenu.addEventListener('click', toggleSidebar);
-        if (btnSidebarToggle) btnSidebarToggle.addEventListener('click', toggleSidebar);
-        if (overlay) overlay.addEventListener('click', toggleSidebar);
-
-        // Close sidebar when clicking a nav item on mobile
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    toggleSidebar();
-                }
-            });
-        });
-
-        // Close sidebar on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
-                toggleSidebar();
-            }
-        });
-
         // 1-Click Alert Mark as Read with smooth animation
         window.dismissAlert = async function(id, btnElement) {
+            if (!isAdmin()) return;
             try {
                 const card = btnElement ? (btnElement.closest('.mon-alert-item') || btnElement.closest('.mon-alert-card') || btnElement.closest('div[style*="display: flex"]')) : null;
                 if (btnElement) {

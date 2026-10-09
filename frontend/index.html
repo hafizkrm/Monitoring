@@ -28,13 +28,34 @@
                 if (typeof resource === 'string') url = resource;
                 else if (resource instanceof URL) url = resource.toString();
                 else if (resource && resource.url) url = resource.url;
+                var retryResource = resource instanceof Request ? resource.clone() : resource;
                 
                 return originalFetch(resource, config).then(function(response) {
-                    if (response.status === 401 && url.indexOf('/api/login') === -1) {
-                        console.warn('[Auth Interceptor] 401 Unauthorized detected. Clearing session.');
-                        localStorage.removeItem('netmon_session');
-                        sessionStorage.removeItem('netmon_session');
-                        window.location.href = 'login.html';
+                    const handledByAuthService = url.indexOf('/api/login') !== -1 || url.indexOf('/api/session') !== -1 || url.indexOf('/api/refresh') !== -1;
+                    if (response.status === 401 && !handledByAuthService) {
+                        return originalFetch('/api/refresh', {
+                            method: 'POST',
+                            credentials: 'same-origin'
+                        }).then(function(refreshResponse) {
+                            if (refreshResponse.ok) {
+                                return originalFetch(retryResource, config).then(function(retryResponse) {
+                                    if (retryResponse.status === 401) {
+                                        localStorage.removeItem('netmon_session');
+                                        sessionStorage.removeItem('netmon_session');
+                                        window.location.replace('login.html');
+                                    }
+                                    return retryResponse;
+                                });
+                            }
+                            if (refreshResponse.status === 401) {
+                                localStorage.removeItem('netmon_session');
+                                sessionStorage.removeItem('netmon_session');
+                                window.location.replace('login.html');
+                            }
+                            return response;
+                        }).catch(function() {
+                            return response;
+                        });
                     }
                     return response;
                 });
@@ -43,7 +64,6 @@
     </script>
     
     <!-- Route Guard Script -->
-    <script type="module" src="/src/shared/js/auth-guard.js"></script>
 </head>
 
 <body>
@@ -73,21 +93,21 @@
         <div class="nav-section">
             <div class="nav-title">Main Menu</div>
             <ul class="nav-menu">
-                <li class="nav-item active" data-view="dashboard" role="button" tabindex="0">
+                <li class="nav-item" data-view="dashboard" role="button" tabindex="0" title="Dashboard">
                     <i class="fas fa-th-large"></i> Dashboard
                 </li>
-                <li class="nav-item" data-view="devices" role="button" tabindex="0">
+                <li class="nav-item" data-view="devices" role="button" tabindex="0" title="Devices">
                     <i class="fas fa-network-wired"></i> Devices
                     <span id="sidebar-device-badge" class="premium-sidebar-badge blue" style="display: none;"></span>
                 </li>
-                <li class="nav-item" data-view="alerts" role="button" tabindex="0">
+                <li class="nav-item" data-view="alerts" role="button" tabindex="0" title="Alerts &amp; Notifications">
                     <i class="fas fa-bell"></i> Alerts & Notifications
                     <span id="sidebar-alert-badge" class="premium-sidebar-badge red" style="display: none;"></span>
                 </li>
-                <li class="nav-item" data-view="reports" role="button" tabindex="0">
+                <li class="nav-item" data-view="reports" role="button" tabindex="0" title="Reports">
                     <i class="fas fa-chart-bar"></i> Reports
                 </li>
-                <li class="nav-item" data-view="logs" role="button" tabindex="0">
+                <li class="nav-item" data-view="logs" role="button" tabindex="0" title="Activity Logs">
                     <i class="fas fa-history"></i> Activity Logs
                 </li>
             </ul>
@@ -96,21 +116,21 @@
         <div class="nav-section">
             <div class="nav-title">System</div>
             <ul class="nav-menu">
-                <li class="nav-item" data-view="settings" role="button" tabindex="0">
+                <li class="nav-item" data-view="settings" role="button" tabindex="0" title="System Settings">
                     <i class="fas fa-cog"></i> Settings
                 </li>
-                <li class="nav-item" data-view="users" role="button" tabindex="0">
+                <li class="nav-item" data-view="users" role="button" tabindex="0" title="User Management">
                     <i class="fas fa-users"></i> User Management
                 </li>
-                <li class="nav-item" data-view="integration" role="button" tabindex="0">
+                <li class="nav-item" data-view="integration" role="button" tabindex="0" title="Integrations">
                     <i class="fas fa-puzzle-piece"></i> Integrations
                     <span class="premium-sidebar-badge purple">PRO</span>
                 </li>
-                <li class="nav-item" data-view="backup" role="button" tabindex="0">
-                    <i class="fas fa-cloud-upload-alt"></i> Backup & Recovery
+                <li class="nav-item" data-view="backup" role="button" tabindex="0" title="Backup &amp; Recovery">
+                    <i class="fas fa-cloud-upload-alt"></i> Backup &amp; Recovery
                     <span class="premium-sidebar-badge purple">PRO</span>
                 </li>
-                <li class="nav-item" data-view="docs" role="button" tabindex="0">
+                <li class="nav-item" data-view="docs" role="button" tabindex="0" title="Documentation">
                     <i class="fas fa-book"></i> Documentation
                 </li>
             </ul>
@@ -240,23 +260,7 @@
             </div>
         </div>
 
-        <!-- Module View: dashboard -->
-
-        <!-- Module View: devices -->
-
-        <!-- Module View: alerts -->
-        <!-- ============================================================
-             VIEW: LOGS AKTIVITAS (Tab-based)
-             ============================================================ -->
-        <!-- Module View: logs -->
-        <!-- END VIEW LOGS -->
-
-        <!-- ============================================================
-             VIEW: LAPORAN (Reports)
-             ============================================================ -->
-        <!-- Module View: reports -->
-        <!-- END VIEW LAPORAN -->
-
+        <!-- Module views dirender dinamis oleh router ke #module-container -->
     </main>
 
 

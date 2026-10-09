@@ -2324,16 +2324,6 @@ canvas {
     text-transform: uppercase;
 }
 
-.sidebar-widget-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 2px;
-    margin-bottom: 1rem;
-}
-
 /* Sidebar Navigation Items */
 .main-nav {
     display: flex;
@@ -2417,48 +2407,6 @@ canvas {
 .status-dot.offline {
     background: var(--accent-red);
     box-shadow: 0 0 10px var(--accent-red);
-}
-
-.sidebar-node-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.sidebar-node-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-glass);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: var(--transition-smooth);
-}
-
-.sidebar-node-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-node-item .node-text-box {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.sidebar-node-item .node-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: white;
-}
-
-.sidebar-node-item .node-ip {
-    font-size: 0.65rem;
-    color: var(--text-dim);
 }
 
 .system-status-pill {
@@ -2560,7 +2508,6 @@ canvas {
     font-size: 0.8rem;
 }
 
-.sidebar-input,
 .input-group-pro input {
     background: transparent;
     border: none;
@@ -2569,15 +2516,6 @@ canvas {
     font-size: 0.8rem;
     padding: 0.6rem 0.5rem;
     width: 100%;
-}
-
-select.sidebar-input {
-    cursor: pointer;
-}
-
-select.sidebar-input option {
-    background: #0f162b;
-    color: white;
 }
 
 .btn-register-glow {

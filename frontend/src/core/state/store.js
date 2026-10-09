@@ -78,3 +78,10 @@ export const uiStore = new Store({
     deviceFilter: 'All', // Active device category ('All', 'Router', 'Switch', etc.)
     activeView: 'dashboard'
 });
+
+// Sidebar badge counters - written by service layer, rendered only by sidebar.service.js
+export const sidebarStore = new Store({
+    alertCount: 0,
+    deviceCount: 0,
+    deviceStatusSummary: ''
+});
