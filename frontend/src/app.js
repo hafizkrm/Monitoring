@@ -25,89 +25,41 @@ window.showToast = showToast;
 // Chart.js is now imported dynamically in dashboard.js
 // Initialize application
 async function initApp() {
-    let sessionUser = null;
-    let connectionUnavailable = false;
-    try {
-        sessionUser = await verifySession();
-    } catch (error) {
-        if (isAuthenticated()) {
-            sessionUser = getCurrentUser();
-            connectionUnavailable = true;
-        }
-    }
-    if (!sessionUser) {
+    // 1. Check Auth Cache Sync
+    if (!isAuthenticated()) {
         window.location.href = 'login.html';
         return;
     }
-    window.addEventListener('auth-session-expired', () => {
-        window.location.replace('login.html');
-    });
-    window.addEventListener('auth-connection-lost', () => {
-        showToast('Koneksi sesi terputus. Mencoba menghubungkan kembali...', 'warning');
-    });
-    window.addEventListener('auth-session-restored', () => {
-        showToast('Sesi monitoring tersambung kembali.', 'success');
-    });
-    if (connectionUnavailable) window.dispatchEvent(new CustomEvent('auth-connection-lost'));
-    startSessionRefresh();
 
-    // Apply Permissions to UI
+    // 2. Setup Listeners
+    window.addEventListener('auth-session-expired', () => { window.location.replace('login.html'); });
+    window.addEventListener('auth-connection-lost', () => { showToast('Koneksi sesi terputus...', 'warning'); });
+    window.addEventListener('auth-session-restored', () => { showToast('Sesi terhubung kembali.', 'success'); });
+
+    // 3. Init UI (Non-blocking)
     applyPermissions();
     updateUserProfile();
-
-    // Init Enterprise UI Features
     initEnterpriseFeatures();
     initDeviceDetail();
     initSidebarEvents();
-
-    // Bind Logout (support multiple buttons, e.g., sidebar and top nav)
-    const logoutBtns = document.querySelectorAll('.btn-logout');
-    logoutBtns.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            try {
-                await logout();
-                window.location.replace('login.html');
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
-        });
-    });
-
-    // Top Navbar Profile Dropdown Logic
-    const profileContainer = document.getElementById('nav-profile-container');
-    const profileDropdown = document.getElementById('nav-profile-dropdown');
-    
-    if (profileContainer && profileDropdown) {
-        profileContainer.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent document click from firing immediately
-            const isVisible = profileDropdown.style.display === 'flex';
-            profileDropdown.style.display = isVisible ? 'none' : 'flex';
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!profileContainer.contains(e.target)) {
-                profileDropdown.style.display = 'none';
-            }
-        });
-    }
-
-    // Wait for Chart.js to load
-    await new Promise(resolve => {
-        const checkChart = () => window.Chart ? resolve() : setTimeout(checkChart, 100);
-        checkChart();
-    });
-
-    // Initialize router
     initRouter();
-
-    // Start core services
     startPolling();
     startClock();
     requestNotificationPermission();
-    
-    // NMS RealTime WebSocket & Snapshot
     initRealTime();
+
+    // 4. Background Verify Session
+    // Refresh loop must not start before the first verify settles, otherwise two
+    // refresh flows race (verifySession calls refreshSession itself on 401).
+    // Use finally, not the success branch: a dead backend still needs refresh.
+    verifySession().then(user => {
+        if (!user) window.location.replace('login.html');
+        else {
+            updateUserProfile();
+            applyPermissions();
+        }
+    }).catch(() => { /* handle offline silently */ })
+      .finally(() => { startSessionRefresh(); });
 
     // Global Search Event
     const globalSearch = document.getElementById('global-search');
@@ -143,6 +95,38 @@ async function initApp() {
 
     // Start TSDB Status Poller
     startTSDBStatusPoller();
+    initAuthUI();
+}
+
+function initAuthUI() {
+    const logoutBtns = document.querySelectorAll('.btn-logout');
+    logoutBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            try {
+                await logout();
+                window.location.replace('login.html');
+            } catch (error) {
+                window.showToast?.(error.message, 'error');
+            }
+        });
+    });
+
+    const profileContainer = document.getElementById('nav-profile-container');
+    const profileDropdown = document.getElementById('nav-profile-dropdown');
+    
+    if (profileContainer && profileDropdown) {
+        profileContainer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = profileDropdown.style.display === 'flex';
+            profileDropdown.style.display = isVisible ? 'none' : 'flex';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!profileContainer.contains(e.target)) {
+                profileDropdown.style.display = 'none';
+            }
+        });
+    }
 }
 
 // initNocFeatures imported from noc.js

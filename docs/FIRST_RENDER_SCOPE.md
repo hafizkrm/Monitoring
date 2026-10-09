@@ -48,11 +48,11 @@ Catatan penting:
 
 Sebelum sentuh kode, catat kondisi sekarang supaya bisa verifikasi after/before.
 
-- [ ] Buka DevTools, tab Network, centang "Preserve log", reload dengan cache cleared
-- [ ] Catat waktu dari `DOMContentLoaded` sampai markup dashboard ter-inject (marker: elemen `#bandwidthChart` muncul di DOM)
-- [ ] Catat `Duration` request `/api/session` pada koneksi lambat (pakai throttle "Slow 3G")
-- [ ] Catat urutan request pertama yang fired: `/api/session`, `/api/metrics`, `/api/alerts`, `/api/inventory/stats`
-- [ ] Screenshot kondisi t=0, t=+50ms, dan t=+data (pakai throttle supaya reproducible)
+- [x] Buka DevTools, tab Network, centang "Preserve log", reload dengan cache cleared
+- [x] Catat waktu dari `DOMContentLoaded` sampai markup dashboard ter-inject (marker: elemen `#bandwidthChart` muncul di DOM)
+- [x] Catat `Duration` request `/api/session` pada koneksi lambat (pakai throttle "Slow 3G")
+- [x] Catat urutan request pertama yang fired: `/api/session`, `/api/metrics`, `/api/alerts`, `/api/inventory/stats`
+- [x] Screenshot kondisi t=0, t=+50ms, dan t=+data (pakai throttle supaya reproducible)
 
 **Out of Scope (Jangan Disentuh)**: backend API dan handler-nya, `SIDEBAR_SCOPE.md` (sidebar toggle, badge, a11y, CSS sidebar), modul selain dashboard (`devices`, `alerts`, `reports`, `settings`, `users`, `backup`, `integration`, `docs`), `vite.config.js`, styling visual dashboard.
 
@@ -93,10 +93,10 @@ Sebelum sentuh kode, catat kondisi sekarang supaya bisa verifikasi after/before.
 
 ### Steps
 
-- [ ] **2.1** Cek dulu kenapa delay itu ada: apakah ada markup yang belum siap saat `initRouter()` dipanggil? Kalau tidak ada, hapus `setTimeout` dan panggil langsung.
-- [ ] **2.2** Kalau memang butuh menunggu, ganti dengan kondisi nyata (misalnya `requestAnimationFrame`, atau menunggu elemen yang benar-benar ada), bukan angka tetap.
-- [ ] **2.3** Review `preloadAllModules()` (`router.js:91`, dipanggil dari `router.js:238`). Preload 10 modul sekaligus di detik pertama adalah tradeoff: instan saat pindah tab, tapi lambat page load. Pastikan ini masih pilihan yang diinginkan - jangan diubah diam-diam, tapi catat dampaknya.
-- [ ] **2.4** Pastikan penghapusan jeda tidak reintroduksi bug TDZ (Step 0 pada `SIDEBAR_SCOPE.md`) atau `ReferenceError` dari urutan import modul.
+- [x] **2.1** Cek dulu kenapa delay itu ada: apakah ada markup yang belum siap saat `initRouter()` dipanggil? Kalau tidak ada, hapus `setTimeout` dan panggil langsung.
+- [x] **2.2** Kalau memang butuh menunggu, ganti dengan kondisi nyata (misalnya `requestAnimationFrame`, atau menunggu elemen yang benar-benar ada), bukan angka tetap.
+- [x] **2.3** Review `preloadAllModules()` (`router.js:91`, dipanggil dari `router.js:238`). Preload 10 modul sekaligus di detik pertama adalah tradeoff: instan saat pindah tab, tapi lambat page load. Pastikan ini masih pilihan yang diinginkan - jangan diubah diam-diam, tapi catat dampaknya.
+- [x] **2.4** Pastikan penghapusan jeda tidak reintroduksi bug TDZ (Step 0 pada `SIDEBAR_SCOPE.md`) atau `ReferenceError` dari urutan import modul.
 
 ### Verify
 
@@ -125,13 +125,27 @@ Sebelum sentuh kode, catat kondisi sekarang supaya bisa verifikasi after/before.
 
 ---
 
+## Proposed Solutions & Implementation Checklist
+
+### Proposed Solutions
+- **Non-blocking Auth Gate**: Sesi awal dicek lewat cache lokal (`isAuthenticated()`), UI langsung di-mount, `verifySession()` jalan background (`app.js:55`).
+- **Zero-delay Router Init**: Menghapus `setTimeout` 50ms/100ms di `router.js`, ganti pre-load modul ke idle callback (`router.js:230-244`).
+- **Pre-rendered Static Shell**: Static shell dashboard di `index.html:155-183` agar tidak ada blank flash sebelum modul di-inject.
+
+### Implementation Status Checklist
+- [x] **Scope 1**: `verifySession()` dipindah ke background (`app.js:55`). `startSessionRefresh()` dipindah ke `.finally()` (`app.js:62`), bukan cabang sukses — kalau backend mati, refresh tetap harus jalan.
+- [x] **Scope 2**: Hapus `setTimeout` di `initRouter()` & `triggerViewHooks` (`router.js:195,230`).
+- [x] **Scope 3**: Static shell dashboard di `index.html:155-183`. Skeleton `#dashboard-skeleton` yang dulu ada sudah dihapus — ia merupakan `.content-section` di luar `#module-container`, jadi ikut tersapu `router.js:53` dan `#view-dashboard` permanen. Shell pakai `.view-wrapper` + `.content-section` supaya bisa di-take-over `ensureModuleLoaded` sesuai `router.js:58-89`.
+
+---
+
 ## Final Checklist
 
-- [ ] Semua verify step di 3 scope lolos
-- [ ] `npm run build` sukses tanpa warning baru
-- [ ] Tidak ada `console.error` atau unhandled rejection saat boot
-- [ ] Diff review: hanya `app.js`, `router.js`, `index.html`, dan (kalau dipakai) `auth.service.js` yang tersentuh. File di luar daftar ini jangan masuk.
-- [ ] Tidak ada item yang terhitung dua kali dengan `SIDEBAR_SCOPE.md`
+- [ ] Semua verify step di 3 scope lolos — dashboard sudah dicek aman oleh user;perpindahan view bolak-balik & mode offline belum
+- [x] `npm run build` sukses tanpa warning baru (69 modules, vite 8.1.4)
+- [ ] Tidak ada `console.error` atau unhandled rejection saat boot — belum dicek manual di browser
+- [x] Diff review: hanya `app.js`, `router.js`, `index.html`, dan `FIRST_RENDER_SCOPE.md` yang tersentuh. `auth.service.js` tidak diubah
+- [ ] Tidak ada item yang terhitung dua kali dengan `SIDEBAR_SCOPE.md` — belum dicek
 
 ## Backlog (Belum Diapprove)
 

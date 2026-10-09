@@ -192,7 +192,7 @@ export async function switchView(view) {
 function triggerViewHooks(view) {
     if (view === 'dashboard') {
         if (typeof window.resizeDashboardCharts === 'function') {
-            setTimeout(() => window.resizeDashboardCharts(), 50);
+            window.resizeDashboardCharts();
         }
     }
     if (view === 'devices') {
@@ -229,14 +229,18 @@ window.switchView = switchView;
 // Initialize navigation
 export function initRouter() {
     // Default view on load
-    setTimeout(() => {
-        const defaultView = document.querySelector('.nav-item.active') || document.querySelector('.nav-item[data-view="dashboard"]');
-        if (defaultView) {
-            defaultView.click();
-        }
-        // Synchronously mount & pre-cache all remaining modules for instant tab switching
-        setTimeout(() => preloadAllModules(), 100);
-    }, 50);
+    const defaultView = document.querySelector('.nav-item.active') || document.querySelector('.nav-item[data-view="dashboard"]');
+    if (defaultView) {
+        defaultView.click();
+    }
+    // Mount & pre-cache remaining modules for instant tab switching.
+    // requestIdleCallback is missing in Safari <16.4 and older Firefox. Without a
+    // fallback it throws here, which aborts the rest of initApp() in app.js.
+    if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(() => preloadAllModules());
+    } else {
+        setTimeout(() => preloadAllModules(), 0);
+    }
 }
 
 // Go back to previous view
