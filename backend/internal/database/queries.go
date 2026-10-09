@@ -808,13 +808,19 @@ func (db *Database) GetPaginatedDevices(ctx context.Context, page, limit int, se
 // GetInterfaceMetricsByIP returns interface metrics
 func (db *Database) GetInterfaceMetricsByIP(ctx context.Context, ip string) ([]map[string]interface{}, error) {
 	var devID int
-	if err := db.QueryRowContext(ctx, "SELECT id FROM devices WHERE ip_address = ? LIMIT 1", ip).Scan(&devID); err != nil {
-		// If not found by IP, try parsing the string as an ID directly
-		if parsedID, parseErr := strconv.Atoi(ip); parseErr == nil {
-			devID = parsedID
+	err := db.QueryRowContext(ctx, "SELECT id FROM devices WHERE ip_address = ? LIMIT 1", ip).Scan(&devID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// If not found by IP, try parsing the string as an ID directly
+			if parsedID, parseErr := strconv.Atoi(ip); parseErr == nil {
+				devID = parsedID
+			} else {
+				// Not found and not an ID, return empty
+				return []map[string]interface{}{}, nil
+			}
 		} else {
-			// Not found and not an ID, return empty
-			return []map[string]interface{}{}, nil
+			// DB connection/query error MUST propagate
+			return []map[string]interface{}{}, err
 		}
 	}
 
@@ -1321,26 +1327,27 @@ func (db *Database) GetGlobalBandwidthHistory(ctx context.Context, durationStr s
 
 	query := fmt.Sprintf(`
 		SELECT 
-			FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(m.collected_at) / %d) * %d, '%%H:%%i:%%s') AS time_label,
+			MIN(m.collected_at) AS time_val,
 			COALESCE(SUM(m.rx_rate), 0) AS total_rx,
 			COALESCE(SUM(m.tx_rate), 0) AS total_tx
 		FROM device_metrics m
 		JOIN devices d ON m.device_id = d.id
 		WHERE (LOWER(d.device_type) LIKE '%%router%%' OR LOWER(d.device_type) LIKE '%%firewall%%' OR LOWER(d.device_type) LIKE '%%gateway%%')
-		  AND m.collected_at >= NOW() - INTERVAL %d HOUR
+		  AND m.collected_at >= UTC_TIMESTAMP() - INTERVAL %d HOUR
 		GROUP BY FLOOR(UNIX_TIMESTAMP(m.collected_at) / %d)
 		ORDER BY MIN(m.collected_at) DESC
-		LIMIT 60`, divisor, divisor, intervalHours, divisor)
+		LIMIT 60`, intervalHours, divisor)
 	rows, err := db.QueryContext(ctx, query)
 	var items []map[string]interface{}
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
-			var timeLabel string
+			var timeVal time.Time
 			var totalRx, totalTx float64
-			if err := rows.Scan(&timeLabel, &totalRx, &totalTx); err == nil {
+			if err := rows.Scan(&timeVal, &totalRx, &totalTx); err == nil {
+				// Convert UTC time to Local time before formatting
 				items = append(items, map[string]interface{}{
-					"timestamp": timeLabel,
+					"timestamp": timeVal.Local().Format("15:04:05"),
 					"download":  totalRx,
 					"upload":    totalTx,
 				})

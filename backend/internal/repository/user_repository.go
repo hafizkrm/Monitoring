@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
@@ -34,7 +35,7 @@ func (r *UserRepository) GetAll() ([]*models.User, error) {
 
 func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	u := &models.User{}
-	err := r.db.QueryRow("SELECT id, name, username, password_hash, role, created_at, updated_at FROM users WHERE username = ?", username).
+	err := r.db.QueryRow("SELECT id, name, username, password_hash, role, created_at, updated_at FROM users WHERE username = ? AND is_active = 1", username).
 		Scan(&u.ID, &u.Name, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -58,16 +59,56 @@ func (r *UserRepository) Create(u *models.User) error {
 	return nil
 }
 
-func (r *UserRepository) Update(u *models.User) error {
-	if u.PasswordHash != "" {
-		_, err := r.db.Exec("UPDATE users SET name=?, username=?, password_hash=?, role=? WHERE id=?", u.Name, u.Username, u.PasswordHash, u.Role, u.ID)
+func (r *UserRepository) UpdateAndRevokeSessions(ctx context.Context, u *models.User) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
 		return err
 	}
-	_, err := r.db.Exec("UPDATE users SET name=?, username=?, role=? WHERE id=?", u.Name, u.Username, u.Role, u.ID)
-	return err
+	defer tx.Rollback()
+	var oldUsername, oldRole, oldPasswordHash string
+	if err := tx.QueryRowContext(ctx, `SELECT username, role, password_hash FROM users WHERE id = ? FOR UPDATE`, u.ID).
+		Scan(&oldUsername, &oldRole, &oldPasswordHash); err != nil {
+		return err
+	}
+
+	if u.PasswordHash != "" {
+		_, err = tx.ExecContext(ctx, `UPDATE users SET name=?, username=?, password_hash=?, role=? WHERE id=?`,
+			u.Name, u.Username, u.PasswordHash, u.Role, u.ID)
+	} else {
+		_, err = tx.ExecContext(ctx, `UPDATE users SET name=?, username=?, role=? WHERE id=?`,
+			u.Name, u.Username, u.Role, u.ID)
+	}
+	if err != nil {
+		return err
+	}
+	credentialsChanged := oldUsername != u.Username || oldRole != u.Role || (u.PasswordHash != "" && oldPasswordHash != u.PasswordHash)
+	if credentialsChanged {
+		if _, err := tx.ExecContext(ctx, `UPDATE auth_sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL`, u.ID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
-func (r *UserRepository) Delete(id int) error {
-	_, err := r.db.Exec("DELETE FROM users WHERE id=?", id)
-	return err
+func (r *UserRepository) DeleteAndRevokeSessions(ctx context.Context, id int) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `UPDATE auth_sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL`, id); err != nil {
+		return err
+	}
+	result, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if deleted == 0 {
+		return sql.ErrNoRows
+	}
+	return tx.Commit()
 }

@@ -33,8 +33,8 @@ func TestCleanupOldData_BoundaryAndBatching(t *testing.T) {
 	defer db.Close()
 
 	// Insert 12,000 old records (older than 30 days) and 1,000 new records
-	oldDate := time.Now().Add(-35 * 24 * time.Hour).Format("2006-01-02 15:04:05")
-	newDate := time.Now().Format("2006-01-02 15:04:05")
+	oldDate := time.Now().UTC().Add(-35 * 24 * time.Hour).Format("2006-01-02 15:04:05")
+	newDate := time.Now().UTC().Format("2006-01-02 15:04:05")
 
 	for i := 0; i < 12000; i += 1000 {
 		var vals string

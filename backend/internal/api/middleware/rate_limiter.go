@@ -80,29 +80,14 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	return v.limiter
 }
 
-var trustedProxies []*net.IPNet
-
-func init() {
+func isTrustedProxy(ip net.IP) bool {
 	proxies := os.Getenv("TRUSTED_PROXIES")
 	if proxies == "" {
-		// Default: only trust localhost
 		proxies = "127.0.0.1/32,::1/128"
 	}
 	for _, cidr := range strings.Split(proxies, ",") {
-		cidr = strings.TrimSpace(cidr)
-		if cidr == "" {
-			continue
-		}
-		_, ipNet, err := net.ParseCIDR(cidr)
-		if err == nil {
-			trustedProxies = append(trustedProxies, ipNet)
-		}
-	}
-}
-
-func isTrustedProxy(ip net.IP) bool {
-	for _, network := range trustedProxies {
-		if network.Contains(ip) {
+		_, network, err := net.ParseCIDR(strings.TrimSpace(cidr))
+		if err == nil && network.Contains(ip) {
 			return true
 		}
 	}

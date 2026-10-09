@@ -9,7 +9,17 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/hafizkrm/Monitoring/backend/internal/config"
+	"github.com/hafizkrm/Monitoring/backend/internal/repository"
 )
+
+type testSessionLookup struct {
+	session repository.AuthSession
+	err     error
+}
+
+func (s testSessionLookup) GetByID(context.Context, string, time.Time) (repository.AuthSession, error) {
+	return s.session, s.err
+}
 
 func TestRequireRole(t *testing.T) {
 	tests := []struct {
@@ -25,15 +35,15 @@ func TestRequireRole(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "View blocked from admin route",
-			userRole:       "view",
+			name:           "Viewer blocked from admin route",
+			userRole:       "viewer",
 			allowedRoles:   []string{"admin"},
 			expectedStatus: http.StatusForbidden,
 		},
 		{
-			name:           "View allowed on view route",
-			userRole:       "view",
-			allowedRoles:   []string{"admin", "view", "viewer"},
+			name:           "Viewer allowed on dashboard route",
+			userRole:       "viewer",
+			allowedRoles:   []string{"admin", "viewer"},
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -73,10 +83,8 @@ func TestAuthMiddleware(t *testing.T) {
 
 	// Create valid token
 	validToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  float64(1),
-		"username": "admin_user",
-		"role":     "admin",
-		"exp":      time.Now().Add(time.Hour).Unix(),
+		"sid": "session-id",
+		"exp": time.Now().Add(time.Hour).Unix(),
 	})
 	validTokenStr, _ := validToken.SignedString([]byte("test_secret"))
 
@@ -102,7 +110,8 @@ func TestAuthMiddleware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			handler := AuthMiddleware(cfg)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sessions := testSessionLookup{session: repository.AuthSession{ID: "session-id", UserID: 1, Username: "admin_user", Role: "admin"}}
+			handler := AuthMiddleware(cfg, sessions)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			}))
 
@@ -119,5 +128,19 @@ func TestAuthMiddleware(t *testing.T) {
 					status, tt.expectedStatus)
 			}
 		})
+	}
+}
+
+func TestIsHTTPSRequestTrustsConfiguredProxyOnly(t *testing.T) {
+	t.Setenv("TRUSTED_PROXIES", "192.0.2.1/32")
+	req := httptest.NewRequest(http.MethodGet, "http://nms.example/", nil)
+	req.RemoteAddr = "192.0.2.1:8080"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	if !IsHTTPSRequest(req) {
+		t.Fatal("trusted proxy HTTPS request not recognized")
+	}
+	req.RemoteAddr = "198.51.100.2:8080"
+	if IsHTTPSRequest(req) {
+		t.Fatal("untrusted forwarded protocol was accepted")
 	}
 }

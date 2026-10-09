@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -33,9 +34,25 @@ type AppConfig struct {
 	Version       string `yaml:"version"`
 	LogLevel      string `yaml:"log_level"` // DEBUG, INFO, WARN, ERROR
 	Port          int    `yaml:"port"`      // For health check endpoint
-	JWTSecret     string `yaml:"jwt_secret"`
-	EncryptionKey string `yaml:"encryption_key"`
-	TSDBUrl       string `yaml:"tsdb_url"`
+	JWTSecret     string   `yaml:"jwt_secret"`
+	EncryptionKey string   `yaml:"encryption_key"`
+	TSDBUrl       string   `yaml:"tsdb_url"`
+	CORSOrigins   []string `yaml:"cors_origins"`
+}
+
+// GetCORSOrigins returns configured CORS origins or defaults
+func (a *AppConfig) GetCORSOrigins() []string {
+	if len(a.CORSOrigins) > 0 {
+		return a.CORSOrigins
+	}
+	if env := os.Getenv("CORS_ORIGINS"); env != "" {
+		origins := strings.Split(env, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+		return origins
+	}
+	return []string{"http://localhost", "http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:8080"}
 }
 
 // GetJWTSecret returns JWT secret, falling back to environment variable

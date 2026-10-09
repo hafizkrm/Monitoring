@@ -3,6 +3,8 @@ package users
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -19,71 +21,126 @@ import (
 
 type UsersHandler struct {
 	repo      *repository.UserRepository
+	sessions  *repository.AuthSessionRepository
 	db        *sql.DB
 	jwtSecret string
 }
 
 func NewUsersHandler(db *sql.DB, jwtSecret string) *UsersHandler {
-	return &UsersHandler{repo: repository.NewUserRepository(db), db: db, jwtSecret: jwtSecret}
+	return &UsersHandler{
+		repo: repository.NewUserRepository(db), sessions: repository.NewAuthSessionRepository(db),
+		db: db, jwtSecret: jwtSecret,
+	}
 }
 
 type loginAttempt struct {
 	count     int
+	inFlight  int
 	lockoutAt time.Time
+	lastSeen  time.Time
 }
 
 var (
-	loginMu       sync.Mutex
-	loginAttempts = make(map[string]*loginAttempt)
+	loginMu                 sync.Mutex
+	loginAttempts           = make(map[string]*loginAttempt)
+	lastLoginAttemptCleanup time.Time
 )
 
-func checkLoginRateLimit(ip string) bool {
+func beginLoginAttempt(ip string) bool {
 	loginMu.Lock()
 	defer loginMu.Unlock()
+	now := time.Now()
+	cleanupLoginAttempts(now, ip)
 
 	attempt, exists := loginAttempts[ip]
 	if !exists {
-		return true
+		if len(loginAttempts) >= 10000 {
+			evictOldestLoginAttempt()
+		}
+		attempt = &loginAttempt{}
+		loginAttempts[ip] = attempt
+		exists = true
 	}
-	if time.Now().Before(attempt.lockoutAt) {
+	attempt.lastSeen = now
+	if now.Before(attempt.lockoutAt) {
 		return false
 	}
-	if attempt.count >= 5 {
-		attempt.count = 0
+	if attempt.count+attempt.inFlight >= 5 {
+		attempt.lockoutAt = now.Add(time.Minute)
+		return false
 	}
+	attempt.inFlight++
 	return true
+}
+
+func cancelLoginAttempt(ip string) {
+	loginMu.Lock()
+	defer loginMu.Unlock()
+	if attempt := loginAttempts[ip]; attempt != nil {
+		if attempt.inFlight > 0 {
+			attempt.inFlight--
+		}
+		attempt.lastSeen = time.Now()
+	}
 }
 
 func recordLoginAttempt(ip string, success bool) {
 	loginMu.Lock()
 	defer loginMu.Unlock()
-
+	now := time.Now()
+	cleanupLoginAttempts(now, ip)
+	attempt := loginAttempts[ip]
+	if attempt == nil {
+		return
+	}
+	if attempt.inFlight > 0 {
+		attempt.inFlight--
+	}
+	attempt.lastSeen = now
 	if success {
 		delete(loginAttempts, ip)
 		return
 	}
-
-	attempt, exists := loginAttempts[ip]
-	if !exists {
-		attempt = &loginAttempt{}
-		loginAttempts[ip] = attempt
-	}
 	attempt.count++
 	if attempt.count >= 5 {
-		attempt.lockoutAt = time.Now().Add(1 * time.Minute) // 1 minute lockout
+		attempt.lockoutAt = now.Add(time.Minute)
 	}
 }
 
-func (h *UsersHandler) insertActivityLog(r *http.Request, user, action, module, description string) {
+func cleanupLoginAttempts(now time.Time, preserveIP string) {
+	if !lastLoginAttemptCleanup.IsZero() && now.Sub(lastLoginAttemptCleanup) < time.Minute {
+		return
+	}
+	lastLoginAttemptCleanup = now
+	for ip, attempt := range loginAttempts {
+		if ip != preserveIP && now.Sub(attempt.lastSeen) > 10*time.Minute && !now.Before(attempt.lockoutAt) {
+			delete(loginAttempts, ip)
+		}
+	}
+}
+
+func evictOldestLoginAttempt() {
+	var oldestIP string
+	var oldest time.Time
+	for ip, attempt := range loginAttempts {
+		if oldestIP == "" || attempt.lastSeen.Before(oldest) {
+			oldestIP, oldest = ip, attempt.lastSeen
+		}
+	}
+	delete(loginAttempts, oldestIP)
+}
+
+func (h *UsersHandler) insertActivityLog(r *http.Request, user, action, module, description string) error {
 	if user == "" {
 		if nameRaw := r.Context().Value(nms_middleware.UserNameContextKey); nameRaw != nil {
-			user = nameRaw.(string)
+			user, _ = nameRaw.(string)
 		} else {
 			user = "System"
 		}
 	}
 	query := `INSERT INTO activity_logs (username, action, module, description, ip_address) VALUES (?, ?, ?, ?, ?)`
-	_, _ = h.db.ExecContext(r.Context(), query, user, action, module, description, r.RemoteAddr)
+	_, err := h.db.ExecContext(r.Context(), query, user, action, module, description, nms_middleware.GetRealIP(r))
+	return err
 }
 
 func (h *UsersHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
@@ -108,13 +165,14 @@ func (h *UsersHandler) AddUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	payload.Username = strings.TrimSpace(payload.Username)
 
-	if payload.Username == "" || len(payload.Password) < 6 {
-		http.Error(w, "Username must not be empty and password must be at least 6 characters", http.StatusBadRequest)
+	if strings.TrimSpace(payload.Username) == "" || len(payload.Password) < 6 || len(payload.Password) > 72 {
+		http.Error(w, "Username wajib diisi dan password harus 6-72 byte", http.StatusBadRequest)
 		return
 	}
 
-	validRole := payload.Role == "admin" || payload.Role == "viewer" || payload.Role == "view"
+	validRole := payload.Role == "admin" || payload.Role == "viewer"
 	if !validRole {
 		http.Error(w, "Invalid role specified", http.StatusBadRequest)
 		return
@@ -145,8 +203,9 @@ func (h *UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	payload.Username = strings.TrimSpace(payload.Username)
 
-	validRole := payload.Role == "admin" || payload.Role == "viewer" || payload.Role == "view"
+	validRole := payload.Role == "admin" || payload.Role == "viewer"
 	if !validRole {
 		http.Error(w, "Invalid role specified", http.StatusBadRequest)
 		return
@@ -158,10 +217,18 @@ func (h *UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		Role:     payload.Role,
 	}
 	if payload.Password != "" {
-		hash, _ := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+		if len(payload.Password) < 6 || len(payload.Password) > 72 {
+			http.Error(w, "Password harus 6-72 byte", http.StatusBadRequest)
+			return
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, "Gagal memproses password", http.StatusInternalServerError)
+			return
+		}
 		user.PasswordHash = string(hash)
 	}
-	if err := h.repo.Update(user); err != nil {
+	if err := h.repo.UpdateAndRevokeSessions(r.Context(), user); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -187,7 +254,7 @@ func (h *UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err := h.repo.Delete(payload.ID); err != nil {
+	if err := h.repo.DeleteAndRevokeSessions(r.Context(), payload.ID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -197,7 +264,11 @@ func (h *UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1 MB limit
+	if !nms_middleware.IsHTTPSRequest(r) && !isLoopbackRequest(r) {
+		writeLoginError(w, http.StatusBadRequest, "Login membutuhkan HTTPS")
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
 	var payload struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -209,60 +280,68 @@ func (h *UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ip := nms_middleware.GetRealIP(r)
-	if !checkLoginRateLimit(ip) {
+	if !beginLoginAttempt(ip) {
 		w.WriteHeader(http.StatusTooManyRequests)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Terlalu banyak percobaan login. Silakan coba lagi sebentar lagi."})
 		return
 	}
 
 	username := strings.TrimSpace(payload.Username)
-	user, err := h.repo.GetByUsername(username)
-	if err != nil || user == nil {
+	if username == "" || payload.Password == "" {
 		recordLoginAttempt(ip, false)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"message": "Username atau password salah"})
+		writeLoginError(w, http.StatusUnauthorized, "Username atau password salah")
+		return
+	}
+	user, err := h.repo.GetByUsername(username)
+	if err != nil {
+		cancelLoginAttempt(ip)
+		writeLoginError(w, http.StatusServiceUnavailable, "Layanan autentikasi sementara tidak tersedia")
+		return
+	}
+	if user == nil {
+		recordLoginAttempt(ip, false)
+		writeLoginError(w, http.StatusUnauthorized, "Username atau password salah")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password)); err != nil {
 		recordLoginAttempt(ip, false)
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"message": "Username atau password salah"})
+		writeLoginError(w, http.StatusUnauthorized, "Username atau password salah")
 		return
 	}
 
-	recordLoginAttempt(ip, true)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  user.ID,
-		"username": user.Username,
-		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 1).Unix(),
-	})
-
-	secret := h.jwtSecret
-	if secret == "" {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"message": "JWT_SECRET is not configured on the server"})
+	if h.jwtSecret == "" || h.sessions == nil {
+		cancelLoginAttempt(ip)
+		writeLoginError(w, http.StatusInternalServerError, "Layanan autentikasi belum dikonfigurasi")
 		return
 	}
-	tokenString, err := token.SignedString([]byte(secret))
+
+	storedRole := user.Role
+	user.Role = repository.NormalizeRole(storedRole)
+	if user.Role != "admin" && user.Role != "viewer" {
+		recordLoginAttempt(ip, false)
+		writeLoginError(w, http.StatusUnauthorized, "Username atau password salah")
+		return
+	}
+	now := time.Now().UTC()
+	session, refreshToken, err := h.sessions.Create(r.Context(), user.ID, user.Role, storedRole, user.PasswordHash, now)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"message": "Gagal menghasilkan token"})
+		cancelLoginAttempt(ip)
+		writeLoginError(w, http.StatusInternalServerError, "Gagal membuat sesi")
 		return
 	}
-
-	// Set HttpOnly Cookie for enhanced XSS protection
-	http.SetCookie(w, &http.Cookie{
-		Name:     "netmon_token",
-		Value:    tokenString,
-		Path:     "/",
-		Expires:  time.Now().Add(1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   r.TLS != nil,
-	})
-
-	h.insertActivityLog(r, user.Username, "LOGIN", "Auth", "User berhasil login")
+	if err := h.insertActivityLog(r, user.Username, "LOGIN", "Auth", "User berhasil login"); err != nil {
+		_ = h.sessions.RevokeByID(r.Context(), session.ID)
+		cancelLoginAttempt(ip)
+		writeLoginError(w, http.StatusInternalServerError, "Login gagal dicatat; coba lagi")
+		return
+	}
+	if err := h.setSessionCookies(w, r, session, refreshToken, now); err != nil {
+		_ = h.sessions.RevokeByID(r.Context(), session.ID)
+		cancelLoginAttempt(ip)
+		writeLoginError(w, http.StatusInternalServerError, "Gagal membuat sesi")
+		return
+	}
+	recordLoginAttempt(ip, true)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": "success",
@@ -271,63 +350,135 @@ func (h *UsersHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UsersHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "netmon_token",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0),
-		MaxAge:   -1,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   r.TLS != nil,
-	})
+	var revokeErr error
+	if cookie, err := r.Cookie("netmon_refresh"); err == nil && h.sessions != nil {
+		revokeErr = h.sessions.RevokeByRefreshToken(r.Context(), cookie.Value)
+	}
+	if cookie, err := r.Cookie("netmon_token"); err == nil && h.sessions != nil && h.jwtSecret != "" {
+		if sessionID := verifiedSessionID(cookie.Value, h.jwtSecret); sessionID != "" {
+			if err := h.sessions.RevokeByID(r.Context(), sessionID); revokeErr == nil {
+				revokeErr = err
+			}
+		}
+	}
+	clearSessionCookies(w, r)
+	if revokeErr != nil {
+		writeLoginError(w, http.StatusInternalServerError, "Gagal mencabut sesi")
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Berhasil logout"})
 }
 
-// Refresh renews the JWT token using the existing valid cookie
-func (h *UsersHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("netmon_token")
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	secret := h.jwtSecret
-	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
+func verifiedSessionID(rawToken, secret string) string {
+	token, err := jwt.Parse(rawToken, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unexpected signing method")
+		}
 		return []byte(secret), nil
-	})
-
-	if err != nil || !token.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), jwt.WithoutClaimsValidation())
+	if err != nil || token == nil || !token.Valid {
+		return ""
 	}
-
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
+		return ""
+	}
+	sessionID, _ := claims["sid"].(string)
+	return sessionID
+}
+
+func (h *UsersHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("netmon_refresh")
+	if err != nil || h.sessions == nil || h.jwtSecret == "" {
+		clearSessionCookies(w, r)
+		writeLoginError(w, http.StatusUnauthorized, "Sesi berakhir; silakan masuk kembali")
 		return
 	}
-
-	// Create new token
-	claims["exp"] = time.Now().Add(1 * time.Hour).Unix()
-	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := newToken.SignedString([]byte(secret))
+	now := time.Now().UTC()
+	session, refreshToken, err := h.sessions.Refresh(r.Context(), cookie.Value, now)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		clearSessionCookies(w, r)
+		if errors.Is(err, repository.ErrSessionInvalid) {
+			writeLoginError(w, http.StatusUnauthorized, "Sesi berakhir; silakan masuk kembali")
+		} else {
+			writeLoginError(w, http.StatusServiceUnavailable, "Layanan sesi sementara tidak tersedia")
+		}
 		return
 	}
+	if err := h.setSessionCookies(w, r, session, refreshToken, now); err != nil {
+		_ = h.sessions.RevokeByID(r.Context(), session.ID)
+		writeLoginError(w, http.StatusInternalServerError, "Gagal memperbarui sesi")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"status": "success", "user": map[string]interface{}{
+		"id": session.UserID, "username": session.Username, "name": session.Name, "role": session.Role,
+	}})
+}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "netmon_token",
-		Value:    tokenString,
-		Path:     "/",
-		Expires:  time.Now().Add(1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   r.TLS != nil,
+func (h *UsersHandler) setSessionCookies(w http.ResponseWriter, r *http.Request, session repository.AuthSession, refreshToken string, now time.Time) error {
+	expiresAt := now.Add(time.Hour)
+	if session.ExpiresAt.Before(expiresAt) {
+		expiresAt = session.ExpiresAt
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sid": session.ID,
+		"exp": expiresAt.Unix(),
 	})
+	accessToken, err := token.SignedString([]byte(h.jwtSecret))
+	if err != nil {
+		return err
+	}
+	secure := nms_middleware.IsHTTPSRequest(r)
+	for _, cookie := range []*http.Cookie{
+		{Name: "netmon_token", Value: accessToken},
+		{Name: "netmon_refresh", Value: refreshToken},
+	} {
+		cookie.Path = "/"
+		cookie.HttpOnly = true
+		cookie.Secure = secure
+		cookie.SameSite = http.SameSiteLaxMode
+		http.SetCookie(w, cookie)
+	}
+	return nil
+}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+func clearSessionCookies(w http.ResponseWriter, r *http.Request) {
+	for _, name := range []string{"netmon_token", "netmon_refresh"} {
+		http.SetCookie(w, &http.Cookie{
+			Name: name, Value: "", Path: "/", Expires: time.Unix(0, 0), MaxAge: -1,
+			HttpOnly: true, Secure: nms_middleware.IsHTTPSRequest(r), SameSite: http.SameSiteLaxMode,
+		})
+	}
+}
+
+func writeLoginError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": message})
+}
+
+func isLoopbackRequest(r *http.Request) bool {
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		ip = r.RemoteAddr
+	}
+	parsed := net.ParseIP(ip)
+	return parsed != nil && parsed.IsLoopback()
+}
+
+func (h *UsersHandler) Session(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(nms_middleware.UserContextKey).(int)
+	username, nameOK := r.Context().Value(nms_middleware.UserNameContextKey).(string)
+	displayName, displayNameOK := r.Context().Value(nms_middleware.UserDisplayNameContextKey).(string)
+	role, roleOK := r.Context().Value(nms_middleware.UserRoleContextKey).(string)
+	if !ok || !nameOK || !displayNameOK || !roleOK {
+		writeLoginError(w, http.StatusUnauthorized, "Sesi tidak valid")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"status": "success", "user": map[string]interface{}{
+		"id": userID, "username": username, "name": displayName, "role": role,
+	}})
 }
