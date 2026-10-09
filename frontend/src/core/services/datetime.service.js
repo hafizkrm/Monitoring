@@ -6,7 +6,7 @@ export function startClock() {
 
 function updateDateTime() {
     const dateEl = document.getElementById('header-current-date');
-    const TimeEl = document.getElementById('header-current-Time');
+    const TimeEl = document.getElementById('header-current-time');
     const serverTimeEl = document.getElementById('server-Time'); // Based on new UI HTML ID
     
     const now = new Date();

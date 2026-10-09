@@ -187,17 +187,11 @@ function startTSDBStatusPoller() {
 function updateUserProfile() {
     const User = getCurrentUser();
     if (!User) return;
-    
-    // Find the elements assuming specific structure or add IDs to them in index.html later.
-    // We'll target them via DOM traversal for now based on index.html structure.
-    const UserProfileDiv = document.querySelector('.top-navbar-controls > div:last-child > div:last-child');
-    if (UserProfileDiv && UserProfileDiv.classList.contains('inline-util-18')) {
-        const spans = UserProfileDiv.querySelectorAll('span');
-        if (spans.length >= 2) {
-            spans[0].textContent = User.name;
-            spans[1].textContent = User.Role.charAt(0).toUpperCase() + User.Role.slice(1);
-        }
-    }
+
+    const nameEl = document.getElementById('nav-user-name');
+    const roleEl = document.getElementById('nav-user-role');
+    if (nameEl) nameEl.textContent = User.name;
+    if (roleEl) roleEl.textContent = User.Role.charAt(0).toUpperCase() + User.Role.slice(1);
 }
 
 // Initialize when DOM is ready

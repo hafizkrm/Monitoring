@@ -152,7 +152,11 @@ Sebelum sentuh kode, catat kondisi sekarang supaya bisa verifikasi after/before.
 Item yang ditemukan tapi **tidak masuk scope sekarang**. Kalau mau dikerjakan, diskusi dulu sebelum tambah ke step di atas.
 
 - Bundle size - Chart.js ikut ter-load walau user tidak pernah buka dashboard. Lazy-load per-view butuh perubahan arsitektur router.
-- `preloadAllModules()` memuat 10 modul di boot; bisa dipecah jadi preload saat idle (`requestIdleCallback`).
-- Placeholder `20 Mei 2024` dan `10:30 WIB` di `index.html` masih hardcoded sampai `startClock()` jalan - kedipan data salah.
-- Placeholder nama user `Admin` dan `Administrator` di `index.html` - perlu skeleton agar tidak menyesatkan.
-- Placeholder angka `6` pada `#top-alert-badge` (`index.html:213`) - angka alert palsu saat boot.
+
+### Sudah Selesai (dihapus dari backlog)
+
+- ~~`preloadAllModules()` memuat 10 modul di boot~~ — sudah dipindah ke idle callback (`router.js:237-244`) pada Scope 2.
+- ~~Placeholder `20 Mei 2024` / `10:30 WIB`~~ — diganti `--` / `--:--:--` di `index.html`. Dua bug tersembunyi ikut ketemu: `datetime.service.js:9` mencari `header-current-Time` (kapital T) sedangkan HTML pakai `header-current-time`, jadi jam tidak pernah update; dan `updateUserProfile()` yang memakai navigasi DOM salah.
+- ~~Placeholder `Admin` / `Administrator`~~ — diganti `--`. `updateUserProfile()` sekarang menunjuk `#nav-user-name` / `#nav-user-role` langsung.
+- ~~Placeholder angka `6` pada `#top-alert-badge`~~ — badge sekarang `display: none` sampai `monitoring-alerts.js:460` menghitung alert asli.
+- Placeholder `--` pada kartu KPI di static shell (`index.html:164-180`) **sengaja dipertahankan** — itu skeleton netral, bukan data palsu, dan hilang begitu modul asli ter-inject.
