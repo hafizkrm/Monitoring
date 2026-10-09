@@ -114,6 +114,38 @@ Nilai 0 menghasilkan `0 Mbps`, sedangkan 0.5 menghasilkan `500 Kbps`. Tidak sala
 
 ---
 
+## Konfirmasi Empiris (9 Okt 2026, dari screenshot dashboard)
+
+Screenshot kondisi nyata menunjukkan angka berikut:
+
+| Sumber | Nilai |
+|---|---|
+| Kartu KPI total | 758 Mbps |
+| Kartu KPI download | 382 Mbps |
+| Kartu KPI upload | 376 Mbps |
+| Tooltip chart pada 16:39:52 | RX 429 Mbps, TX 428 Mbps |
+| Catatan kategori | "79 non-router devices excluded (prevents double counting)" |
+
+**RX 429 vs TX 428 - selisih 1 Mbps, praktis identik.** Ini bukan kebetulan, dan bukan trafik pelanggan yang kebetulan simetris. Untuk router yang menjumlahkan semua interface, berlaku identitas:
+
+```
+D = byte yang di-download pelanggan, U = byte yang di-upload pelanggan
+WAN in  = D      LAN in  = U      ->  RX = D + U
+WAN out = U      LAN out = D      ->  TX = D + U
+```
+
+Jadi **RX identik dengan TX secara eksak, untuk pola trafik apa pun.** Berarti:
+
+1. **Bug 2 terkonfirmasi.** Total yang ditampilkan = `RX + TX` = `2 x (D + U)`, yaitu **2x throughput sebenarnya**. Di screenshot: 758 Mbps tampil, sehingga throughput asli sekitar **379 Mbps**. Verifikasi silang dengan kapasitas link yang sebenarnya - kalau cocok, Bug 2 tertutup.
+2. **Bug 3 terkonfirmasi, dan lebih kuat dari dugaan.** Split download/upload **terbukti mustahil bermakna**, karena secara matematis selalu ~50/50. Dua garis di chart bukan menoload-vs-upload, hanya mengulang hitungan yang sama dua arah.
+3. **Kontradiksi label terlihat di UI.** Legend custom di `dashboard.html:202,207` menulis "Download" dan "Upload", tapi tooltip chart menampilkan label dataset dari `dashboard.js:178,192` yaitu "RX (Receive) Mbps" dan "TX (Transmit) Mbps". Tiga lapis penamaan untuk data yang sama, dan tidak satu pun konsisten.
+
+### Yang BELUM terverifikasi
+
+Arah rx/tx mana yang "benar" (Bug 1) tetap belum terjawab. Karena RX identik dengan TX, keduanya praktis tidak bisa dibedakan dari screenshot ini - nilai 429 dan 428 terlalu dekat. Perlu data dari interface WAN tunggal (bukan agregat semua interface) untuk memastikan.
+
+---
+
 ## Di Luar Scope (jangan disentuh)
 
 - Query agregat SQL di `backend/internal/database/queries.go` (line 194-195, 1331-1332) - belum diaudit, kemungkinan punya masalah konvensi serupa
@@ -125,9 +157,9 @@ Nilai 0 menghasilkan `0 Mbps`, sedangkan 0.5 menghasilkan `500 Kbps`. Tidak sala
 
 ## Checklist
 
-- [ ] Bug 1: konfirmasi arah rx/tx dengan data nyata, bukan argumen semantik, baru putuskan pembalikan
-- [ ] Bug 2: putuskan strategi pemilihan interface uplink di backend
-- [ ] Bug 3: inevitable, atau independen setelah Bug 2 selesai?
+- [ ] Bug 1: konfirmasi arah rx/tx dengan data nyata dari interface WAN tunggal, bukan argumen semantik, baru putuskan pembalikan
+- [ ] Bug 2: putuskan strategi pemilihan interface uplink di backend. **Target verifikasi: total turun dari 758 ke sekitar 379 Mbps**
+- [ ] Bug 3: hapus atau relabel split download/upload, karena terbukti selalu ~50/50
 - [ ] Bug 4: lakukan saat tackle Bug 1 dan Bug 2
 - [ ] Bug 5: dua perbaikan kecil, bisa dikerjakan sendiri
 - [ ] Setelah semua selesai: stabilkan lewat test yang membandingkan agregasi gateway dengan interface uplink
