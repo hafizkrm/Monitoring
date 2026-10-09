@@ -9,15 +9,25 @@ import (
 	"github.com/hafizkrm/Monitoring/backend/internal/database"
 	"github.com/hafizkrm/Monitoring/backend/internal/logger"
 	"github.com/hafizkrm/Monitoring/backend/internal/models"
-	"github.com/hafizkrm/Monitoring/backend/internal/snmp"
 	"github.com/hafizkrm/Monitoring/backend/internal/worker"
 )
 
-// MockSNMP for integration test
-type MockSNMP struct{}
+// MockRuleCache for integration test
+type MockRuleCache struct{}
 
-func (m *MockSNMP) CollectDeviceMetrics(ctx context.Context, device models.Device) (*snmp.DeviceMetrics, error) {
-	return &snmp.DeviceMetrics{
+func (m *MockRuleCache) GetRulesForDevice(deviceID int) map[string]models.ThresholdRule {
+	return nil
+}
+
+func (m *MockRuleCache) Refresh(ctx context.Context) error {
+	return nil
+}
+
+// MockCollector for integration test
+type MockCollector struct{}
+
+func (m *MockCollector) Collect(ctx context.Context, device models.Device) (*models.TelemetrySnapshot, error) {
+	return &models.TelemetrySnapshot{
 		DeviceID:    device.ID,
 		Status:      "up",
 		CPUUsage:    12.5,
@@ -26,7 +36,7 @@ func (m *MockSNMP) CollectDeviceMetrics(ctx context.Context, device models.Devic
 		MemoryUsed:  8 * 1024 * 1024 * 1024,
 		Uptime:      3600,
 		CollectedAt: time.Now(),
-		Interfaces: []snmp.InterfaceMetrics{
+		Interfaces: []models.InterfaceSnapshot{
 			{
 				DeviceID:       device.ID,
 				InterfaceIndex: 1,
@@ -40,6 +50,23 @@ func (m *MockSNMP) CollectDeviceMetrics(ctx context.Context, device models.Devic
 		},
 	}, nil
 }
+
+func (m *MockCollector) GetNetworkStats(ctx context.Context, ip string) (int, float64, float64, error) {
+	return 10, 1.0, 0, nil
+}
+
+// MockRegistry for integration test
+type MockRegistry struct {
+	collector worker.Collector
+}
+
+func (m *MockRegistry) Register(name string, collector worker.Collector) {
+}
+
+func (m *MockRegistry) Get(name string) (worker.Collector, error) {
+	return m.collector, nil
+}
+
 
 func TestFullPollingFlow(t *testing.T) {
 	// Skip if no real database is available or configured
@@ -85,8 +112,9 @@ func TestFullPollingFlow(t *testing.T) {
 	}
 
 	// 2. Start Manager
-	mockSNMP := &MockSNMP{}
-	mgr := worker.NewManager(cfg, db, log, mockSNMP)
+	mockRegistry := &MockRegistry{collector: &MockCollector{}}
+	mockRuleCache := &MockRuleCache{}
+	mgr := worker.NewManager(cfg, db, log, mockRegistry, mockRuleCache)
 
 	runCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

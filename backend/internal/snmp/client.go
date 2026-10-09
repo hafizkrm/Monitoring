@@ -90,8 +90,11 @@ func (c *Client) getSession(ip, community string) (*gosnmp.GoSNMP, error) {
 	if val, ok := c.sessionCache.Load(key); ok {
 		s := val.(*cachedSession)
 		s.lastUsed = time.Now()
-		s.client.Version = version
-		return s.client, nil
+		
+		clone := new(gosnmp.GoSNMP)
+		*clone = *s.client
+		clone.Version = version
+		return clone, nil
 	}
 
 	client := &gosnmp.GoSNMP{

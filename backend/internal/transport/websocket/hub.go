@@ -58,7 +58,7 @@ func (h *Hub) Run() {
 			}
 
 			for client := range h.clients {
-				if !client.HasTopic(topic) && !client.HasTopic("all") {
+				if (!client.HasTopic(topic) && !client.HasTopic("all")) || !client.CanReceive(message.Event) {
 					continue
 				}
 				select {

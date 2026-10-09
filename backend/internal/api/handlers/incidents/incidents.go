@@ -117,7 +117,7 @@ func GetAlerts(db *database.Database) http.HandlerFunc {
 			FROM alerts a 
 			LEFT JOIN incidents i ON a.incident_id = i.id 
 			LEFT JOIN devices d ON d.id = i.device_id
-			ORDER BY a.created_at DESC LIMIT 200
+			ORDER BY a.created_at DESC LIMIT 1000
 		`
 		rows, err := db.QueryContext(ctx, query)
 		if err != nil {

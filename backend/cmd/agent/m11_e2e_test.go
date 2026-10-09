@@ -54,7 +54,8 @@ func setupE2EDB(t *testing.T) *database.Database {
 		status VARCHAR(50) DEFAULT 'online',
 		enabled TINYINT(1) DEFAULT 1
 	)`)
-	_, _ = rawDB.Exec(`CREATE TABLE IF NOT EXISTS device_metrics (
+	_, _ = rawDB.Exec(`DROP TABLE IF EXISTS device_metrics`)
+	_, _ = rawDB.Exec(`CREATE TABLE device_metrics (
 		id INT AUTO_INCREMENT PRIMARY KEY,
 		device_id INT,
 		collected_at DATETIME,
@@ -63,7 +64,8 @@ func setupE2EDB(t *testing.T) *database.Database {
 		memory_total FLOAT,
 		uptime INT,
 		rx_rate FLOAT,
-		tx_rate FLOAT
+		tx_rate FLOAT,
+		jitter FLOAT
 	)`)
 
 	// Clean tables

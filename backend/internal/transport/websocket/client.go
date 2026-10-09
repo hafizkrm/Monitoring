@@ -1,15 +1,19 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	nms_middleware "github.com/hafizkrm/Monitoring/backend/internal/api/middleware"
 	"github.com/hafizkrm/Monitoring/backend/internal/contracts"
+	"github.com/hafizkrm/Monitoring/backend/internal/repository"
 )
 
 const (
@@ -42,19 +46,45 @@ type SubscribeMessage struct {
 	Topics []string `json:"topics"`
 }
 
+type sessionLookup interface {
+	GetByID(context.Context, string, time.Time) (repository.AuthSession, error)
+}
+
 // Client adalah representasi koneksi dari sebuah browser/frontend.
 type Client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	send   chan contracts.WSEventEnvelope
-	topics map[string]bool
-	mu     sync.RWMutex
+	hub       *Hub
+	conn      *websocket.Conn
+	send      chan contracts.WSEventEnvelope
+	topics    map[string]bool
+	role      string
+	sessionID string
+	sessions  sessionLookup
+	mu        sync.RWMutex
 }
 
 func (c *Client) HasTopic(topic string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.topics[topic]
+}
+
+func (c *Client) CanSubscribe(topic string) bool {
+	if c.role == "admin" {
+		return true
+	}
+	return topic == "global" || strings.HasPrefix(topic, "device:")
+}
+
+func (c *Client) CanReceive(event string) bool {
+	if c.role == "admin" {
+		return true
+	}
+	switch event {
+	case "device.connected", "device.disconnected", "metrics.updated", "alert.created":
+		return true
+	default:
+		return false
+	}
 }
 
 // readPump membaca pesan/pong dari koneksi WebSocket dan menangani unregister saat terputus.
@@ -84,7 +114,9 @@ func (c *Client) readPump() {
 			switch sub.Action {
 			case "subscribe":
 				for _, topic := range sub.Topics {
-					c.topics[topic] = true
+					if c.CanSubscribe(topic) {
+						c.topics[topic] = true
+					}
 				}
 			case "unsubscribe":
 				for _, topic := range sub.Topics {
@@ -122,6 +154,15 @@ func (c *Client) writePump() {
 				return
 			}
 		case <-ticker.C:
+			if c.sessions != nil && c.sessionID != "" {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				_, err := c.sessions.GetByID(ctx, c.sessionID, time.Now().UTC())
+				cancel()
+				if err != nil {
+					_ = c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "session revoked"), time.Now().Add(writeWait))
+					return
+				}
+			}
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
@@ -131,18 +172,24 @@ func (c *Client) writePump() {
 }
 
 // ServeWS menangani request koneksi WebSocket dari klien.
-func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func ServeWS(hub *Hub, sessions sessionLookup, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error:", err)
 		return
 	}
 	client := &Client{
-		hub:    hub,
-		conn:   conn,
-		send:   make(chan contracts.WSEventEnvelope, 256),
-		topics: make(map[string]bool),
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan contracts.WSEventEnvelope, 256),
+		topics:   make(map[string]bool),
+		role:     "viewer",
+		sessions: sessions,
 	}
+	if role, ok := r.Context().Value(nms_middleware.UserRoleContextKey).(string); ok {
+		client.role = role
+	}
+	client.sessionID, _ = r.Context().Value(nms_middleware.SessionIDContextKey).(string)
 
 	// Automatically subscribe to global topics if desired, e.g., "global"
 	client.topics["global"] = true

@@ -21,7 +21,7 @@ func TestWSLoad200Devices(t *testing.T) {
 	go hub.Run()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ServeWS(hub, w, r)
+		ServeWS(hub, nil, w, r)
 	}))
 	defer server.Close()
 

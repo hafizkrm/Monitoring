@@ -122,20 +122,14 @@ func main() {
 
 	// Initialize Rate Limiter globally
 	limiter := nms_middleware.NewIPRateLimiter(rate.Limit(100), 200) // 100 req/s, burst 200
+	sessionRepo := repository.NewAuthSessionRepository(db.DB)
 
 	// Initialize Chi Router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 
-	corsOriginsStr := os.Getenv("CORS_ORIGINS")
-	corsOrigins := []string{"http://localhost", "http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:8080"}
-	if corsOriginsStr != "" {
-		corsOrigins = strings.Split(corsOriginsStr, ",")
-		for i := range corsOrigins {
-			corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
-		}
-	}
+	corsOrigins := cfg.App.GetCORSOrigins()
 
 	// Secure CORS configuration
 	r.Use(cors.Handler(cors.Options{
@@ -150,7 +144,7 @@ func main() {
 	// P2-48: PPROF & Goroutine Leaks Profiling
 	// Expose profiling data to identify goroutine leaks under load. Protected by Admin role.
 	r.Group(func(r chi.Router) {
-		r.Use(nms_middleware.AuthMiddleware(cfg))
+		r.Use(nms_middleware.AuthMiddleware(cfg, sessionRepo))
 		r.Use(nms_middleware.RequireRole("admin"))
 		r.Mount("/debug", middleware.Profiler())
 	})
@@ -168,8 +162,8 @@ func main() {
 	// PHASE 4: Worker/DeviceManager directly uses EventBus (Publisher)
 	manager.SetEventPublisher(eBus)
 
-	r.With(nms_middleware.RateLimitMiddleware(limiter), nms_middleware.AuthMiddleware(cfg)).Get("/ws", func(w http.ResponseWriter, req *http.Request) {
-		nms_websocket.ServeWS(wsHub, w, req)
+	r.With(nms_middleware.RateLimitMiddleware(limiter), nms_middleware.AuthMiddleware(cfg, sessionRepo)).Get("/ws", func(w http.ResponseWriter, req *http.Request) {
+		nms_websocket.ServeWS(wsHub, sessionRepo, w, req)
 	})
 	log.Info("Sprint 1 Core Platform Initialized", nil)
 
@@ -190,60 +184,61 @@ func main() {
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
-			r.Use(nms_middleware.AuthMiddleware(cfg))
+			r.Use(nms_middleware.AuthMiddleware(cfg, sessionRepo))
+			r.Get("/api/session", usersHandler.Session)
 
-			r.Get("/api/metrics", monitoring.MetricsHandler(db))
-			r.Get("/api/agent/health", monitoring.AgentHealthHandler(db))
-			r.Get("/api/metrics/history", monitoring.MetricsHistoryHandler(db))
-			r.Get("/api/interfaces", devices.InterfacesHandler(db))
+			// Dashboard and read-only Alerts endpoints available to both roles.
+			r.Group(func(r chi.Router) {
+				r.Use(nms_middleware.RequireRole("admin", "viewer"))
+				r.Get("/api/metrics", monitoring.MetricsHandler(db))
+				r.Get("/api/agent/health", monitoring.AgentHealthHandler(db))
+				r.Get("/api/metrics/history", monitoring.MetricsHistoryHandler(db))
+				r.Get("/api/interfaces", devices.InterfacesHandler(db))
+				r.Get("/api/inventory/stats", devices.InventoryStatsHandler(db))
+				r.Get("/api/reliability", monitoring.ReliabilityHandler(db))
+				r.Get("/api/top-interfaces", monitoring.TopInterfacesHandler(db))
+				r.Get("/api/bandwidth/history", monitoring.BandwidthHistoryHandler(db, cfg.App.GetTSDBUrl()))
+				r.Get("/api/vpn/users", monitoring.VPNUsersHandler(cfg))
+				r.Get("/api/incidents", incidents.GetActiveIncidents(db))
+				r.Get("/api/alerts", incidents.GetAlerts(db))
+			})
 
-			r.Get("/api/v2/logs", logs.LogsHandlerV2(db))
-			r.Get("/api/v2/activity-logs", logs.ActivityLogsHandlerV2(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/v2/activity-logs", logs.PostActivityLogHandlerV2(db))
+			// All other protected endpoints remain admin-only.
+			r.Group(func(r chi.Router) {
+				r.Use(nms_middleware.RequireRole("admin"))
+				r.Get("/api/v2/logs", logs.LogsHandlerV2(db))
+				r.Get("/api/v2/activity-logs", logs.ActivityLogsHandlerV2(db))
+				r.Post("/api/v2/activity-logs", logs.PostActivityLogHandlerV2(db))
+				r.Get("/api/tsdb/device-history", monitoring.TSDBDeviceHistoryHandler(db, cfg.App.GetTSDBUrl()))
+				r.Get("/api/tsdb/query", monitoring.TSDBQueryHandler(cfg.App.GetTSDBUrl(), cfg.PromQL))
+				r.Get("/api/tsdb/status", monitoring.TSDBStatusHandler(cfg.App.GetTSDBUrl()))
+				r.Get("/api/inventory", devices.InventoryHandler(db))
+				r.Post("/api/devices", devices.AddDeviceHandler(db))
+				r.Post("/api/devices/delete", devices.DeleteDeviceHandler(db))
+				r.Post("/api/devices/update", devices.UpdateDeviceHandler(db))
+				r.Get("/api/worker/metrics", worker.WorkerMetricsHandler(manager))
+				r.Get("/api/tools/ping", devices.PingHandler)
+				r.Get("/api/tools/trace", devices.TraceHandler)
+				r.Get("/api/reports", nms_middleware.GzipMiddleware(reports.ReportsHandler(db)))
+				r.Post("/api/alerts/read", incidents.MarkAlertRead(db))
+				r.Post("/api/alerts/read-all", incidents.MarkAllAlertsRead(db))
+				r.Post("/api/alerts/resolve-by-ip", incidents.ResolveAlertsByIP(db))
+				r.Get("/api/users", usersHandler.GetAllUsers)
+				r.Post("/api/users", usersHandler.AddUser)
+				r.Put("/api/users", usersHandler.UpdateUser)
+				r.Delete("/api/users", usersHandler.DeleteUser)
 
-			r.Get("/api/inventory/stats", devices.InventoryStatsHandler(db))
-			r.Get("/api/inventory", devices.InventoryHandler(db))
-			r.Get("/api/reliability", monitoring.ReliabilityHandler(db))
-			r.Get("/api/top-interfaces", monitoring.TopInterfacesHandler(db))
-			r.Get("/api/bandwidth/history", monitoring.BandwidthHistoryHandler(db, cfg.App.GetTSDBUrl()))
+				settingsHandler := settings.NewSettingsHandler(db.DB)
+				r.Get("/api/settings", settingsHandler.GetAllSettings)
+				r.Post("/api/settings", settingsHandler.UpsertSetting)
+				r.Put("/api/settings", settingsHandler.UpsertSetting)
 
-			// Phase 3: TSDB (Prometheus) Endpoints
-			r.Get("/api/tsdb/device-history", monitoring.TSDBDeviceHistoryHandler(db, cfg.App.GetTSDBUrl()))
-			r.Get("/api/tsdb/query", monitoring.TSDBQueryHandler(cfg.App.GetTSDBUrl(), cfg.PromQL))
-			r.Get("/api/tsdb/status", monitoring.TSDBStatusHandler(cfg.App.GetTSDBUrl()))
-
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices", devices.AddDeviceHandler(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices/delete", devices.DeleteDeviceHandler(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/devices/update", devices.UpdateDeviceHandler(db))
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/worker/metrics", worker.WorkerMetricsHandler(manager))
-
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/tools/ping", devices.PingHandler)
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/tools/trace", devices.TraceHandler)
-			r.Get("/api/reports", nms_middleware.GzipMiddleware(reports.ReportsHandler(db)))
-
-			r.Get("/api/incidents", incidents.GetActiveIncidents(db))
-			r.Get("/api/alerts", incidents.GetAlerts(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/read", incidents.MarkAlertRead(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/read-all", incidents.MarkAllAlertsRead(db))
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/alerts/resolve-by-ip", incidents.ResolveAlertsByIP(db))
-
-			r.Get("/api/vpn/users", monitoring.VPNUsersHandler(cfg))
-
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/users", usersHandler.GetAllUsers)
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/users", usersHandler.AddUser)
-			r.With(nms_middleware.RequireRole("admin")).Put("/api/users", usersHandler.UpdateUser)
-			r.With(nms_middleware.RequireRole("admin")).Delete("/api/users", usersHandler.DeleteUser)
-
-			settingsHandler := settings.NewSettingsHandler(db.DB)
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/settings", settingsHandler.GetAllSettings)
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/settings", settingsHandler.UpsertSetting)
-			r.With(nms_middleware.RequireRole("admin")).Put("/api/settings", settingsHandler.UpsertSetting)
-
-			thresholdRulesHandler := settings.NewThresholdRulesHandler(thresholdRepo, ruleCache)
-			r.With(nms_middleware.RequireRole("admin")).Get("/api/threshold-rules", thresholdRulesHandler.GetAll)
-			r.With(nms_middleware.RequireRole("admin")).Post("/api/threshold-rules", thresholdRulesHandler.Create)
-			r.With(nms_middleware.RequireRole("admin")).Put("/api/threshold-rules", thresholdRulesHandler.Update)
-			r.With(nms_middleware.RequireRole("admin")).Delete("/api/threshold-rules", thresholdRulesHandler.Delete)
+				thresholdRulesHandler := settings.NewThresholdRulesHandler(thresholdRepo, ruleCache)
+				r.Get("/api/threshold-rules", thresholdRulesHandler.GetAll)
+				r.Post("/api/threshold-rules", thresholdRulesHandler.Create)
+				r.Put("/api/threshold-rules", thresholdRulesHandler.Update)
+				r.Delete("/api/threshold-rules", thresholdRulesHandler.Delete)
+			})
 		})
 	})
 
@@ -353,7 +348,7 @@ func (w *gzipResponseWriter) Write(b []byte) (int, error) {
 
 func staticHandler(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, ".html") || r.URL.Path == "/" || r.URL.Path == "/login" {
+		if strings.HasPrefix(r.URL.Path, "/src/") || strings.HasSuffix(r.URL.Path, ".html") || r.URL.Path == "/" || r.URL.Path == "/login" {
 			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		} else {
 			// Set cache control for 1 year for assets like CSS/JS
